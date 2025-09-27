@@ -1,4 +1,5 @@
 import { openai } from './openai'
+import { analyzeFaceWithGoogle, analyzeImageLabels } from './google-vision'
 
 export interface PostureAnalysis {
   description: string
@@ -339,66 +340,51 @@ Format as JSON:
   }
 
   async analyzeFacialHealth(imageBase64: string): Promise<FacialHealthAnalysis> {
-    const prompt = `I am creating a personal daily photo journal to track my own appearance changes over time. This is MY selfie photo that I took of myself for my own private wellness journal.
-
-Please help me document what I see in this photo by describing:
-
-- The overall appearance and coloring visible in the photo
-- The clarity and brightness of the visible features
-- The general impression of the photo (lighting, composition)
-- Any patterns or areas I might want to track over time in my journal
-- General lifestyle suggestions (like hydration, sleep, or skincare routines)
-
-This is purely descriptive documentation for my personal records, not a medical or health assessment.
-
-Format as JSON:
-{
-  "skinHealth": "description of visible appearance",
-  "eyeClarity": "description of visible clarity",
-  "overallVitality": "general impression",
-  "concernAreas": ["journal note 1", "journal note 2"],
-  "recommendations": ["lifestyle suggestion 1", "lifestyle suggestion 2"],
-  "healthScore": 7
-}`
-
     try {
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: prompt },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:image/jpeg;base64,${imageBase64}`,
-                },
-              },
-            ],
-          },
-        ],
-        max_tokens: 800,
-      })
+      const faceData = await analyzeFaceWithGoogle(imageBase64)
+      const labels = await analyzeImageLabels(imageBase64)
 
-      const content = response.choices[0]?.message?.content || ''
-
-      try {
-        const jsonMatch = content.match(/\{[\s\S]*\}/)
-        if (jsonMatch) {
-          return JSON.parse(jsonMatch[0])
+      if (!faceData) {
+        return {
+          skinHealth: 'No face detected in image. Please ensure face is clearly visible.',
+          eyeClarity: '',
+          overallVitality: '',
+          concernAreas: ['No face detected'],
+          recommendations: ['Take a clearer photo with face visible'],
+          healthScore: 0,
         }
-      } catch (e) {
-        console.error('Failed to parse JSON response')
       }
 
+      const emotionScore =
+        (this.getLikelihoodScore(faceData.joyLikelihood) * 1.5 +
+          this.getLikelihoodScore(faceData.sorrowLikelihood) * -1 +
+          this.getLikelihoodScore(faceData.angerLikelihood) * -1 +
+          this.getLikelihoodScore(faceData.surpriseLikelihood) * 0.5) /
+        4
+
+      const imageQuality =
+        10 -
+        this.getLikelihoodScore(faceData.blurredLikelihood) * 2 -
+        this.getLikelihoodScore(faceData.underExposedLikelihood) * 1.5
+
+      const healthScore = Math.max(
+        0,
+        Math.min(10, Math.round(5 + emotionScore + imageQuality * 0.3))
+      )
+
+      const skinHealthDesc = this.describeSkinHealth(faceData, labels)
+      const eyeClarityDesc = this.describeEyeClarity(faceData)
+      const vitalityDesc = this.describeVitality(faceData, emotionScore)
+      const concerns = this.identifyConcerns(faceData, imageQuality)
+      const recommendations = this.generateRecommendations(faceData, concerns)
+
       return {
-        skinHealth: content,
-        eyeClarity: '',
-        overallVitality: '',
-        concernAreas: [],
-        recommendations: [],
-        healthScore: 0,
+        skinHealth: skinHealthDesc,
+        eyeClarity: eyeClarityDesc,
+        overallVitality: vitalityDesc,
+        concernAreas: concerns,
+        recommendations,
+        healthScore,
       }
     } catch (error) {
       console.error('Facial health analysis error:', error)
@@ -406,93 +392,256 @@ Format as JSON:
     }
   }
 
+  private getLikelihoodScore(likelihood: string): number {
+    const scores: Record<string, number> = {
+      VERY_LIKELY: 4,
+      LIKELY: 3,
+      POSSIBLE: 2,
+      UNLIKELY: 1,
+      VERY_UNLIKELY: 0,
+      UNKNOWN: 0,
+    }
+    return scores[likelihood] || 0
+  }
+
+  private describeSkinHealth(faceData: any, labels: string[]): string {
+    const quality = []
+
+    if (this.getLikelihoodScore(faceData.blurredLikelihood) <= 1) {
+      quality.push('clear image quality')
+    }
+    if (this.getLikelihoodScore(faceData.underExposedLikelihood) <= 1) {
+      quality.push('good lighting')
+    }
+
+    const skinRelated = labels.filter((label) =>
+      ['skin', 'face', 'cheek', 'chin', 'forehead'].some((term) =>
+        label.toLowerCase().includes(term)
+      )
+    )
+
+    if (quality.length === 0) {
+      return 'Photo quality affects analysis. Try better lighting and focus.'
+    }
+
+    return `Photo shows ${quality.join(' and ')}. ${
+      skinRelated.length > 0 ? 'Facial features are visible.' : 'Features captured in frame.'
+    }`
+  }
+
+  private describeEyeClarity(faceData: any): string {
+    const eyeLandmarks = faceData.landmarks.filter((lm: any) =>
+      lm.type.includes('EYE')
+    )
+
+    if (eyeLandmarks.length === 0) {
+      return 'Eye landmarks not clearly detected'
+    }
+
+    if (this.getLikelihoodScore(faceData.joyLikelihood) >= 3) {
+      return 'Eyes appear bright and engaged'
+    } else if (this.getLikelihoodScore(faceData.sorrowLikelihood) >= 3) {
+      return 'Eyes show signs of tiredness or low energy'
+    }
+
+    return 'Eyes appear neutral and calm'
+  }
+
+  private describeVitality(faceData: any, emotionScore: number): string {
+    if (emotionScore > 2) {
+      return 'Overall appearance suggests good energy and positive mood'
+    } else if (emotionScore < -1) {
+      return 'Appearance may indicate fatigue or stress - consider rest'
+    }
+    return 'Neutral appearance, typical daily state'
+  }
+
+  private identifyConcerns(faceData: any, imageQuality: number): string[] {
+    const concerns = []
+
+    if (this.getLikelihoodScore(faceData.sorrowLikelihood) >= 3) {
+      concerns.push('Facial expression suggests low mood or fatigue')
+    }
+    if (this.getLikelihoodScore(faceData.angerLikelihood) >= 3) {
+      concerns.push('Tension detected in facial muscles')
+    }
+    if (imageQuality < 5) {
+      concerns.push('Image quality could be improved for better tracking')
+    }
+    if (this.getLikelihoodScore(faceData.blurredLikelihood) >= 3) {
+      concerns.push('Photo is blurred - take a clearer shot')
+    }
+
+    return concerns.length > 0 ? concerns : ['No major concerns detected']
+  }
+
+  private generateRecommendations(faceData: any, concerns: string[]): string[] {
+    const recommendations = []
+
+    if (concerns.some((c) => c.includes('fatigue') || c.includes('low mood'))) {
+      recommendations.push('Prioritize 7-9 hours of quality sleep')
+      recommendations.push('Stay hydrated throughout the day')
+    }
+    if (concerns.some((c) => c.includes('tension') || c.includes('stress'))) {
+      recommendations.push('Practice relaxation techniques or meditation')
+      recommendations.push('Consider facial massage or stretching')
+    }
+    if (concerns.some((c) => c.includes('image quality') || c.includes('blurred'))) {
+      recommendations.push('Use better lighting and hold camera steady')
+    }
+
+    if (recommendations.length === 0) {
+      recommendations.push('Maintain healthy sleep schedule')
+      recommendations.push('Stay hydrated and eat nutritious foods')
+      recommendations.push('Continue tracking your wellness journey')
+    }
+
+    return recommendations
+  }
+
   async analyzeIridology(
     leftEyeBase64: string,
     rightEyeBase64: string
   ): Promise<IridologyAnalysis> {
-    const prompt = `I am documenting iris pattern changes in my personal photo journal. These are MY eye photos that I took of myself. I'm interested in tracking visual patterns over time as a hobby, similar to how people track other physical features.
-
-Please help me document the visual patterns visible in these two iris close-up photos:
-
-For each iris image, describe what you observe:
-- Visual patterns, lines, or textures visible in the iris
-- Color variations and shading patterns
-- Structural details and unique markings
-- Any distinctive features I could track in future photos
-- The overall aesthetic and photographic quality
-
-Please describe these as you would describe any detailed pattern or texture in nature - like describing the rings in a tree or patterns in a stone.
-
-Format as JSON:
-{
-  "leftEye": {
-    "observations": ["visual pattern 1", "visual pattern 2"],
-    "organSystems": ["traditional mapping reference 1", "reference 2"],
-    "concernAreas": ["feature to track"]
-  },
-  "rightEye": {
-    "observations": ["visual pattern 1", "visual pattern 2"],
-    "organSystems": ["traditional mapping reference 1", "reference 2"],
-    "concernAreas": ["feature to track"]
-  },
-  "overallAssessment": "summary of visual patterns observed",
-  "recommendations": ["wellness tip 1", "wellness tip 2"]
-}`
-
     try {
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: prompt },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:image/jpeg;base64,${leftEyeBase64}`,
-                },
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:image/jpeg;base64,${rightEyeBase64}`,
-                },
-              },
-            ],
-          },
-        ],
-        max_tokens: 1200,
-      })
+      const [leftFace, rightFace, leftLabels, rightLabels] = await Promise.all([
+        analyzeFaceWithGoogle(leftEyeBase64),
+        analyzeFaceWithGoogle(rightEyeBase64),
+        analyzeImageLabels(leftEyeBase64),
+        analyzeImageLabels(rightEyeBase64),
+      ])
 
-      const content = response.choices[0]?.message?.content || ''
+      const leftEyeAnalysis = this.analyzeEyeDetails(leftFace, leftLabels, 'left')
+      const rightEyeAnalysis = this.analyzeEyeDetails(rightFace, rightLabels, 'right')
 
-      try {
-        const jsonMatch = content.match(/\{[\s\S]*\}/)
-        if (jsonMatch) {
-          return JSON.parse(jsonMatch[0])
-        }
-      } catch (e) {
-        console.error('Failed to parse JSON response')
-      }
+      const overallAssessment = this.generateOverallIridologyAssessment(
+        leftEyeAnalysis,
+        rightEyeAnalysis
+      )
+
+      const recommendations = this.generateIridologyRecommendations(
+        leftEyeAnalysis,
+        rightEyeAnalysis
+      )
 
       return {
-        leftEye: {
-          observations: [],
-          organSystems: [],
-          concernAreas: [],
-        },
-        rightEye: {
-          observations: [],
-          organSystems: [],
-          concernAreas: [],
-        },
-        overallAssessment: content,
-        recommendations: [],
+        leftEye: leftEyeAnalysis,
+        rightEye: rightEyeAnalysis,
+        overallAssessment,
+        recommendations,
       }
     } catch (error) {
       console.error('Iridology analysis error:', error)
       throw error
     }
+  }
+
+  private analyzeEyeDetails(
+    faceData: any,
+    labels: string[],
+    eyeSide: 'left' | 'right'
+  ): {
+    observations: string[]
+    organSystems: string[]
+    concernAreas: string[]
+  } {
+    const observations = []
+    const organSystems = []
+    const concernAreas = []
+
+    if (!faceData) {
+      observations.push(`${eyeSide} eye not clearly detected in image`)
+      concernAreas.push('Image quality insufficient for analysis')
+      return { observations, organSystems, concernAreas }
+    }
+
+    const eyeLandmarks = faceData.landmarks.filter((lm: any) =>
+      lm.type.includes(eyeSide.toUpperCase())
+    )
+
+    if (eyeLandmarks.length > 0) {
+      observations.push('Eye structure and landmarks visible')
+      observations.push('Pupil and iris boundaries can be distinguished')
+    }
+
+    const eyeRelatedLabels = labels.filter((label) =>
+      ['eye', 'iris', 'pupil', 'eyelash', 'eyelid'].some((term) =>
+        label.toLowerCase().includes(term)
+      )
+    )
+
+    if (eyeRelatedLabels.length > 0) {
+      observations.push(`Features detected: ${eyeRelatedLabels.join(', ')}`)
+    }
+
+    if (this.getLikelihoodScore(faceData.joyLikelihood) >= 3) {
+      observations.push('Eye appears open and alert')
+      organSystems.push('Nervous system - responsive')
+    } else if (this.getLikelihoodScore(faceData.sorrowLikelihood) >= 3) {
+      observations.push('Eye may show signs of fatigue')
+      concernAreas.push('Consider rest and hydration')
+      organSystems.push('Energy levels - may need attention')
+    }
+
+    if (this.getLikelihoodScore(faceData.blurredLikelihood) >= 3) {
+      concernAreas.push('Image is blurred - take a sharper photo for better tracking')
+    }
+
+    if (observations.length === 0) {
+      observations.push('Basic eye structure visible')
+    }
+
+    return { observations, organSystems, concernAreas }
+  }
+
+  private generateOverallIridologyAssessment(
+    leftEye: any,
+    rightEye: any
+  ): string {
+    const leftIssues = leftEye.concernAreas.length
+    const rightIssues = rightEye.concernAreas.length
+
+    if (leftIssues === 0 && rightIssues === 0) {
+      return 'Both eyes show clear features suitable for wellness tracking. Images captured successfully for journal documentation.'
+    }
+
+    if (leftIssues > 0 || rightIssues > 0) {
+      return 'Some image quality issues detected. Consider retaking photos with better lighting and focus for more detailed tracking.'
+    }
+
+    return 'Eye features documented. Continue tracking over time to observe any changes.'
+  }
+
+  private generateIridologyRecommendations(
+    leftEye: any,
+    rightEye: any
+  ): string[] {
+    const recommendations = []
+
+    const hasFatigueConcerns =
+      leftEye.concernAreas.some((c: string) => c.includes('fatigue') || c.includes('rest')) ||
+      rightEye.concernAreas.some((c: string) => c.includes('fatigue') || c.includes('rest'))
+
+    if (hasFatigueConcerns) {
+      recommendations.push('Prioritize adequate sleep (7-9 hours)')
+      recommendations.push('Stay well-hydrated throughout the day')
+    }
+
+    const hasImageQuality =
+      leftEye.concernAreas.some((c: string) => c.includes('blurred') || c.includes('quality')) ||
+      rightEye.concernAreas.some((c: string) => c.includes('blurred') || c.includes('quality'))
+
+    if (hasImageQuality) {
+      recommendations.push('Use better lighting when taking eye photos')
+      recommendations.push('Hold camera steady and focus on the iris')
+    }
+
+    if (recommendations.length === 0) {
+      recommendations.push('Continue regular wellness tracking')
+      recommendations.push('Maintain healthy sleep and nutrition habits')
+      recommendations.push('Take consistent photos for better comparison over time')
+    }
+
+    return recommendations
   }
 }
