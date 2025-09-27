@@ -380,6 +380,15 @@ export default function WeeklyCheckPage() {
                     </div>
                     <div className="flex gap-3">
                       <Button
+                        onClick={() => {
+                          setPhotos((prev) => ({ ...prev, [currentStep]: null }))
+                        }}
+                        variant="danger"
+                        className="flex-1"
+                      >
+                        🗑️ Remove
+                      </Button>
+                      <Button
                         onClick={handleTakePhoto}
                         className="flex-1 bg-neutral-700 hover:bg-neutral-600"
                       >
