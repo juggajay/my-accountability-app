@@ -208,8 +208,27 @@
 }
 
 /* Base Styles */
+html {
+  background-color: #0a0a0a !important;
+  color-scheme: dark !important;
+}
+
 body {
-  @apply bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50 font-sans antialiased;
+  background-color: #0a0a0a !important;
+  color: #fafafa !important;
+  @apply font-sans antialiased;
+}
+
+/* Force dark backgrounds on all pages */
+body > div,
+body > main,
+[class*="min-h-screen"] {
+  background-color: #0a0a0a !important;
+}
+
+/* Force light text color */
+h1, h2, h3, h4, h5, h6, p, span, div, a, button, input, textarea, label {
+  color: inherit;
 }
 
 /* Custom Utility Classes */

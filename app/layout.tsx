@@ -30,29 +30,12 @@ export default function RootLayout({
     <html lang="en" className="dark" style={{ colorScheme: 'dark', backgroundColor: '#0a0a0a' }}>
       <head>
         <meta name="color-scheme" content="dark" />
-        <style dangerouslySetInnerHTML={{
-          __html: `
-            * {
-              color-scheme: dark !important;
-            }
-            html, body {
-              background-color: #0a0a0a !important;
-              color: #fafafa !important;
-            }
-          `
-        }} />
-        <script dangerouslySetInnerHTML={{
-          __html: `
-            (function() {
-              document.documentElement.classList.add('dark');
-              document.documentElement.style.colorScheme = 'dark';
-            })();
-          `
-        }} />
       </head>
-      <body className={`${inter.variable} font-sans antialiased bg-neutral-950 text-neutral-50`} style={{ backgroundColor: '#0a0a0a', color: '#fafafa' }}>
+      <body className={`${inter.variable} font-sans antialiased`} style={{ backgroundColor: '#0a0a0a', color: '#fafafa' }}>
         <Navigation />
-        {children}
+        <div style={{ backgroundColor: '#0a0a0a', minHeight: '100vh' }}>
+          {children}
+        </div>
       </body>
     </html>
   );
