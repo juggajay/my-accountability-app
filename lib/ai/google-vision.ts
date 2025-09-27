@@ -4,7 +4,16 @@ let client: vision.ImageAnnotatorClient | null = null
 
 function getClient() {
   if (!client) {
-    if (process.env.GOOGLE_CLOUD_CREDENTIALS_JSON) {
+    if (process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64) {
+      const credentialsJson = Buffer.from(
+        process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64,
+        'base64'
+      ).toString('utf-8')
+      const credentials = JSON.parse(credentialsJson)
+      client = new vision.ImageAnnotatorClient({
+        credentials,
+      })
+    } else if (process.env.GOOGLE_CLOUD_CREDENTIALS_JSON) {
       const credentials = JSON.parse(process.env.GOOGLE_CLOUD_CREDENTIALS_JSON)
       client = new vision.ImageAnnotatorClient({
         credentials,
@@ -13,7 +22,7 @@ function getClient() {
       client = new vision.ImageAnnotatorClient()
     } else {
       throw new Error(
-        'Google Cloud credentials not found. Set GOOGLE_CLOUD_CREDENTIALS_JSON or GOOGLE_APPLICATION_CREDENTIALS'
+        'Google Cloud credentials not found. Set GOOGLE_CLOUD_CREDENTIALS_BASE64, GOOGLE_CLOUD_CREDENTIALS_JSON, or GOOGLE_APPLICATION_CREDENTIALS'
       )
     }
   }
