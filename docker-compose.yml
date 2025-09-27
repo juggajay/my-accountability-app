@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # Next.js Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - CRON_SECRET=${CRON_SECRET}
+    env_file:
+      - .env.local
+    restart: unless-stopped
+    networks:
+      - app-network
+    depends_on:
+      - playwright
+  
+  # Playwright for testing
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.42.0-focal
+    volumes:
+      - ./tests:/tests
+      - ./playwright-report:/playwright-report
+      - ./test-results:/test-results
+    working_dir: /app
+    command: tail -f /dev/null
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
