@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   title: "Personal Accountability & Wellness App",
   description: "AI-powered accountability app for sciatica recovery, alcohol moderation, and personal goals",
   manifest: "/manifest.json",
-  themeColor: "#0ea5e9",
+  themeColor: "#0a0a0a",
   viewport: {
     width: "device-width",
     initialScale: 1,
