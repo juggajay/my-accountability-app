@@ -84,10 +84,10 @@ export default function PostureCheckPage() {
                   <Button onClick={handleTakePhoto}>
                     📷 Take Photo
                   </Button>
-                  <label>
-                    <Button as="span">
+                  <label className="cursor-pointer">
+                    <div className="px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-lg transition-colors inline-block">
                       📁 Upload Photo
-                    </Button>
+                    </div>
                     <input
                       type="file"
                       accept="image/*"
