@@ -85,7 +85,7 @@ export default function WeeklyCheckPage() {
     },
     {
       type: 'forwardBend',
-      title: 'Forward Bend Test',
+      title: 'Bend Test',
       instructions: 'Bend forward from waist, arms hanging, side view. Shows hamstring flexibility, spinal curves, compensation patterns.',
       icon: '🤸',
     },
