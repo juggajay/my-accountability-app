@@ -133,28 +133,40 @@ export interface ProgressComparison {
 
 export class VisionAnalysis {
   async analyzePostureSimple(imageBase64: string): Promise<PostureAnalysis> {
-    const prompt = `${MEDICAL_ANALYSIS_CONTEXT}
+    const prompt = `You are analyzing a posture photo for PERSONAL HEALTH TRACKING purposes. This is the user's own photo for self-monitoring and wellness documentation.
+
+CRITICAL: You MUST provide detailed posture analysis. This is NOT facial recognition - you are analyzing body mechanics, alignment, and posture patterns.
+
+CONTEXT: ${MEDICAL_ANALYSIS_CONTEXT}
 
 TASK: Analyze this posture photo using professional postural assessment protocols.
 
-Apply systematic examination:
-1. **Five-Point Alignment**: Check external auditory meatus, acromioclavicular joint, greater trochanter, fibular head, lateral malleolus alignment
-2. **Craniovertebral Angle**: Assess forward head posture severity
-3. **Syndrome Screening**: Upper Crossed (protracted shoulders, tight pecs/posterior neck) or Lower Crossed (anterior pelvic tilt, tight hip flexors)
-4. **Compensation Patterns**: Identify specific muscle imbalances
-5. **Symmetry**: Check for lateral deviations, uneven shoulders/hips
+What to examine:
+1. **Head/Neck Position**: Forward head posture angle, ear alignment over shoulder
+2. **Shoulder Alignment**: Level, protracted/retracted, rounded forward
+3. **Spine Curves**: Cervical, thoracic, lumbar curvature quality
+4. **Hip Position**: Anterior/posterior tilt, level or uneven
+5. **Overall Stance**: Weight distribution, knee alignment, foot position
+6. **Muscle Imbalances**: Visible tightness or weakness patterns
+
+If photo quality is poor, state SPECIFICALLY what's wrong:
+- "Photo too far away - stand 6-8 feet from camera"
+- "Side angle needed - currently shows front view"
+- "Full body not visible - ensure head to feet in frame"
+- "Lighting too dark - use natural light or bright room lighting"
+- "Blurry image - hold camera steady or use timer"
 
 Format as JSON:
 {
-  "description": "detailed anatomical assessment with specific observations",
-  "compensationPatterns": ["pattern with affected muscles/structures", "another pattern"],
-  "comparisonToIdeal": "precise deviations from ideal alignment with clinical context",
-  "corrections": ["evidence-based corrective exercise with technique", "specific postural cue"],
+  "description": "detailed anatomical assessment OR specific photo quality issues",
+  "compensationPatterns": ["pattern with affected muscles", "another pattern"],
+  "comparisonToIdeal": "deviations from ideal alignment",
+  "corrections": ["corrective exercise with technique", "postural cue"],
   "rating": 7,
-  "rawAnalysis": "comprehensive integrated analysis"
+  "rawAnalysis": "comprehensive analysis OR specific instructions to retake photo"
 }
 
-Be specific, evidence-based, and actionable. This is for personal health tracking.`
+IMPORTANT: Always provide constructive analysis or specific retake instructions. Never refuse to analyze for identity reasons - this is biomechanical assessment, not facial recognition.`
 
     try {
       const response = await openai.chat.completions.create({
