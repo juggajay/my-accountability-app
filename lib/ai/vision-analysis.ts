@@ -1,5 +1,11 @@
 import { openai } from './openai'
-import { analyzeFaceWithGoogle, analyzeImageLabels } from './google-vision'
+import {
+  analyzeFaceWithGoogle,
+  analyzeImageLabels,
+  analyzeObjectLocalization,
+  analyzeInflammation,
+  calculateHealthScores,
+} from './google-vision'
 
 export interface PostureAnalysis {
   description: string
@@ -50,10 +56,69 @@ export interface IridologyAnalysis {
   recommendations: string[]
 }
 
+export interface SideProfileAnalysis {
+  forwardHeadPosture: {
+    severity: 'none' | 'mild' | 'moderate' | 'severe'
+    angleDeviation: number
+    description: string
+  }
+  neckCurve: string
+  upperBackAlignment: string
+  recommendations: string[]
+  healthScore: number
+}
+
+export interface BackViewAnalysis {
+  shoulderAlignment: {
+    symmetrical: boolean
+    deviation: string
+  }
+  hipAlignment: {
+    symmetrical: boolean
+    deviation: string
+  }
+  spinalAlignment: string
+  scoliosisIndicators: string[]
+  recommendations: string[]
+  healthScore: number
+}
+
+export interface SeatedPostureAnalysis {
+  lowerBackSupport: string
+  forwardHeadInSeated: string
+  shoulderPosition: string
+  workPostureIssues: string[]
+  recommendations: string[]
+  healthScore: number
+}
+
+export interface HandsAnalysis {
+  circulationScore: number
+  inflammationIndicators: string[]
+  jointSymmetry: boolean
+  colorAnalysis: string
+  concerns: string[]
+  recommendations: string[]
+}
+
+export interface ForwardBendAnalysis {
+  hamstringFlexibility: 'excellent' | 'good' | 'moderate' | 'limited'
+  spinalCurveQuality: string
+  compensationPatterns: string[]
+  symmetry: boolean
+  recommendations: string[]
+  flexibilityScore: number
+}
+
 export interface FullBodyAnalysis {
   posture: PostureAnalysis
   facialHealth: FacialHealthAnalysis
   iridology: IridologyAnalysis
+  sideProfile?: SideProfileAnalysis
+  backView?: BackViewAnalysis
+  seatedPosture?: SeatedPostureAnalysis
+  hands?: HandsAnalysis
+  forwardBend?: ForwardBendAnalysis
   overallWellness: string
   weekOverWeekChanges?: string
 }
@@ -545,9 +610,9 @@ Format as JSON:
     organSystems: string[]
     concernAreas: string[]
   } {
-    const observations = []
-    const organSystems = []
-    const concernAreas = []
+    const observations: string[] = []
+    const organSystems: string[] = []
+    const concernAreas: string[] = []
 
     if (!faceData) {
       observations.push(`${eyeSide} eye not clearly detected in image`)
@@ -643,5 +708,274 @@ Format as JSON:
     }
 
     return recommendations
+  }
+
+  async analyzeSideProfile(imageBase64: string): Promise<SideProfileAnalysis> {
+    const [faceData, objects] = await Promise.all([
+      analyzeFaceWithGoogle(imageBase64),
+      analyzeObjectLocalization(imageBase64),
+    ])
+
+    if (!faceData) {
+      throw new Error('Face detection failed')
+    }
+
+    const tiltAngle = Math.abs(faceData.tiltAngle)
+    let severity: 'none' | 'mild' | 'moderate' | 'severe' = 'none'
+    if (tiltAngle >= 30) severity = 'severe'
+    else if (tiltAngle >= 20) severity = 'moderate'
+    else if (tiltAngle >= 10) severity = 'mild'
+
+    const head = objects.find((obj) => obj.name.toLowerCase().includes('head'))
+    const torso = objects.find((obj) => obj.name.toLowerCase().includes('torso') || obj.name.toLowerCase().includes('person'))
+
+    let neckCurve = 'Normal cervical curve'
+    let upperBackAlignment = 'Aligned'
+
+    if (head && torso && head.centerPoint.x < torso.centerPoint.x) {
+      neckCurve = 'Forward head posture detected - cervical curve may be flattened'
+      upperBackAlignment = 'Upper back rounding (kyphosis) likely present'
+    }
+
+    const recommendations = []
+    if (severity !== 'none') {
+      recommendations.push('Chin tucks: Gently pull chin back 10 reps, 3x daily')
+      recommendations.push('Wall angels: Stand against wall, move arms up and down')
+      recommendations.push('Check desk ergonomics - monitor at eye level')
+    }
+
+    const healthScore = Math.max(0, 100 - tiltAngle * 3)
+
+    return {
+      forwardHeadPosture: {
+        severity,
+        angleDeviation: tiltAngle,
+        description: severity === 'none'
+          ? 'Good head alignment'
+          : `Forward head posture (${tiltAngle.toFixed(1)}° deviation)`,
+      },
+      neckCurve,
+      upperBackAlignment,
+      recommendations,
+      healthScore: Math.round(healthScore),
+    }
+  }
+
+  async analyzeBackView(imageBase64: string): Promise<BackViewAnalysis> {
+    const objects = await analyzeObjectLocalization(imageBase64)
+
+    const shoulders = objects.filter((obj) => obj.name.toLowerCase().includes('shoulder'))
+    const hips = objects.filter((obj) => obj.name.toLowerCase().includes('hip'))
+
+    let shoulderSymmetry = true
+    let shoulderDeviation = 'Shoulders appear level'
+    if (shoulders.length >= 2) {
+      const yDiff = Math.abs(shoulders[0].centerPoint.y - shoulders[1].centerPoint.y)
+      if (yDiff > 0.05) {
+        shoulderSymmetry = false
+        shoulderDeviation = `Shoulder height difference detected (${(yDiff * 100).toFixed(1)}%)`
+      }
+    }
+
+    let hipSymmetry = true
+    let hipDeviation = 'Hips appear level'
+    if (hips.length >= 2) {
+      const yDiff = Math.abs(hips[0].centerPoint.y - hips[1].centerPoint.y)
+      if (yDiff > 0.05) {
+        hipSymmetry = false
+        hipDeviation = `Hip height difference detected (${(yDiff * 100).toFixed(1)}%)`
+      }
+    }
+
+    const spinalAlignment = shoulderSymmetry && hipSymmetry
+      ? 'Spine appears symmetrical'
+      : 'Possible spinal asymmetry - shoulder/hip imbalance detected'
+
+    const scoliosisIndicators = []
+    if (!shoulderSymmetry) scoliosisIndicators.push('Uneven shoulders')
+    if (!hipSymmetry) scoliosisIndicators.push('Uneven hips')
+    if (scoliosisIndicators.length > 0) {
+      scoliosisIndicators.push('Consider professional assessment for scoliosis screening')
+    }
+
+    const recommendations = []
+    if (!shoulderSymmetry || !hipSymmetry) {
+      recommendations.push('Single-leg exercises to address imbalances')
+      recommendations.push('Unilateral stretching and strengthening')
+      recommendations.push('Regular chiropractic or PT evaluation')
+    }
+
+    const healthScore = (shoulderSymmetry ? 50 : 25) + (hipSymmetry ? 50 : 25)
+
+    return {
+      shoulderAlignment: {
+        symmetrical: shoulderSymmetry,
+        deviation: shoulderDeviation,
+      },
+      hipAlignment: {
+        symmetrical: hipSymmetry,
+        deviation: hipDeviation,
+      },
+      spinalAlignment,
+      scoliosisIndicators,
+      recommendations,
+      healthScore,
+    }
+  }
+
+  async analyzeSeatedPosture(imageBase64: string): Promise<SeatedPostureAnalysis> {
+    const [faceData, objects] = await Promise.all([
+      analyzeFaceWithGoogle(imageBase64),
+      analyzeObjectLocalization(imageBase64),
+    ])
+
+    if (!faceData) {
+      throw new Error('Face detection failed')
+    }
+
+    const tiltAngle = faceData.tiltAngle
+    const forwardHeadInSeated = Math.abs(tiltAngle) > 15
+      ? `Forward head posture in seated position (${Math.abs(tiltAngle).toFixed(1)}°)`
+      : 'Head position neutral while seated'
+
+    const lowerBackSupport = objects.some((obj) => obj.name.toLowerCase().includes('chair'))
+      ? 'Chair detected - check lumbar support contact'
+      : 'No chair back visible - may need better lower back support'
+
+    const shoulderPosition = Math.abs(faceData.rollAngle) > 5
+      ? 'Shoulders uneven - possible desk setup imbalance'
+      : 'Shoulder position appears level'
+
+    const workPostureIssues = []
+    if (Math.abs(tiltAngle) > 15) workPostureIssues.push('Forward head while working')
+    if (Math.abs(faceData.rollAngle) > 5) workPostureIssues.push('Shoulder tilt/asymmetry')
+    if (!objects.some((obj) => obj.name.toLowerCase().includes('chair'))) {
+      workPostureIssues.push('Chair back not visible - check lumbar support')
+    }
+
+    const recommendations = []
+    if (workPostureIssues.length > 0) {
+      recommendations.push('Adjust monitor height to eye level')
+      recommendations.push('Use lumbar roll or cushion for lower back')
+      recommendations.push('Take standing breaks every 30 minutes')
+      recommendations.push('Set up desk ergonomics assessment')
+    }
+
+    const healthScore = Math.max(0, 100 - workPostureIssues.length * 20)
+
+    return {
+      lowerBackSupport,
+      forwardHeadInSeated,
+      shoulderPosition,
+      workPostureIssues,
+      recommendations,
+      healthScore,
+    }
+  }
+
+  async analyzeHands(imageBase64: string): Promise<HandsAnalysis> {
+    const [inflammation, labels, objects] = await Promise.all([
+      analyzeInflammation(imageBase64),
+      analyzeImageLabels(imageBase64),
+      analyzeObjectLocalization(imageBase64),
+    ])
+
+    const hands = objects.filter((obj) => obj.name.toLowerCase().includes('hand'))
+    const jointSymmetry = hands.length === 2
+
+    const inflammationIndicators = [...inflammation.concerns]
+    if (inflammation.inflammationLevel !== 'none') {
+      inflammationIndicators.push(`${inflammation.inflammationLevel} inflammation detected`)
+    }
+
+    const circulationScore = Math.round((100 - inflammation.rednessScore * 30))
+
+    const concerns = []
+    if (inflammation.inflammationLevel === 'moderate' || inflammation.inflammationLevel === 'severe') {
+      concerns.push('Elevated inflammation markers - consider anti-inflammatory diet')
+    }
+    if (!jointSymmetry) {
+      concerns.push('Asymmetric hand positioning - retake photo with both hands visible')
+    }
+
+    const recommendations = []
+    if (inflammation.inflammationLevel !== 'none') {
+      recommendations.push('Reduce inflammatory foods (sugar, processed foods)')
+      recommendations.push('Increase omega-3 intake (fish, walnuts, flaxseed)')
+      recommendations.push('Stay well-hydrated')
+    }
+    if (circulationScore < 70) {
+      recommendations.push('Hand/wrist mobility exercises')
+      recommendations.push('Contrast bath therapy (alternating warm/cold water)')
+    }
+
+    return {
+      circulationScore: Math.max(0, circulationScore),
+      inflammationIndicators,
+      jointSymmetry,
+      colorAnalysis: `${inflammation.dominantHue} tones, ${inflammation.warmColorPercentage}% warm colors`,
+      concerns,
+      recommendations,
+    }
+  }
+
+  async analyzeForwardBend(imageBase64: string): Promise<ForwardBendAnalysis> {
+    const objects = await analyzeObjectLocalization(imageBase64)
+
+    const head = objects.find((obj) => obj.name.toLowerCase().includes('head'))
+    const torso = objects.find((obj) => obj.name.toLowerCase().includes('torso') || obj.name.toLowerCase().includes('person'))
+
+    let flexibilityScore = 70
+    let flexibility: 'excellent' | 'good' | 'moderate' | 'limited' = 'moderate'
+
+    if (head && torso) {
+      const bendDepth = torso.centerPoint.y - head.centerPoint.y
+
+      if (bendDepth > 0.4) {
+        flexibility = 'excellent'
+        flexibilityScore = 95
+      } else if (bendDepth > 0.3) {
+        flexibility = 'good'
+        flexibilityScore = 80
+      } else if (bendDepth > 0.15) {
+        flexibility = 'moderate'
+        flexibilityScore = 60
+      } else {
+        flexibility = 'limited'
+        flexibilityScore = 40
+      }
+    }
+
+    const spinalCurveQuality = flexibility === 'excellent' || flexibility === 'good'
+      ? 'Smooth spinal curve during forward bend'
+      : 'Limited forward flexion - possible hamstring tightness or spinal restriction'
+
+    const compensationPatterns = []
+    if (flexibility === 'limited' || flexibility === 'moderate') {
+      compensationPatterns.push('Hamstring tightness limiting bend depth')
+      compensationPatterns.push('Possible lower back compensation')
+    }
+
+    const symmetry = objects.length >= 2
+
+    const recommendations = []
+    if (flexibility !== 'excellent') {
+      recommendations.push('Daily hamstring stretches: 30 seconds, 3 sets each leg')
+      recommendations.push('Cat-cow stretches for spinal mobility')
+      recommendations.push('Gradual forward bend practice - don\'t force it')
+    }
+    if (compensationPatterns.length > 0) {
+      recommendations.push('Focus on hip hinging rather than back rounding')
+      recommendations.push('Foam roll hamstrings and calves')
+    }
+
+    return {
+      hamstringFlexibility: flexibility,
+      spinalCurveQuality,
+      compensationPatterns,
+      symmetry,
+      recommendations,
+      flexibilityScore,
+    }
   }
 }
