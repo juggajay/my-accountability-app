@@ -339,26 +339,25 @@ Format as JSON:
   }
 
   async analyzeFacialHealth(imageBase64: string): Promise<FacialHealthAnalysis> {
-    const prompt = `You are a wellness tracking assistant helping users monitor their facial health over time for general wellness purposes. This is not medical diagnosis.
+    const prompt = `You are a wellness journaling assistant. The user is tracking their appearance over time as part of a personal wellness journal. This is purely for self-documentation and personal tracking purposes.
 
-Analyze this facial photo for overall health indicators:
+Describe the visible appearance in this selfie photo:
 
-Observe:
-- Skin health (color, clarity, hydration)
-- Eye clarity and brightness
-- Overall vitality and energy
-- Any visible concern areas
-- General wellness indicators
+- Skin appearance (color, texture)
+- Eye appearance
+- Overall energy/vitality impression
+- Note any visible areas the user might want to track
+- General wellness observations
 
-Provide health recommendations.
+Provide general wellness suggestions (hydration, sleep, skincare routine).
 
 Format as JSON:
 {
   "skinHealth": "description",
   "eyeClarity": "description",
   "overallVitality": "description",
-  "concernAreas": ["concern 1", "concern 2"],
-  "recommendations": ["rec 1", "rec 2"],
+  "concernAreas": ["observation 1", "observation 2"],
+  "recommendations": ["general wellness tip 1", "general wellness tip 2"],
   "healthScore": 7
 }`
 
@@ -411,35 +410,35 @@ Format as JSON:
     leftEyeBase64: string,
     rightEyeBase64: string
   ): Promise<IridologyAnalysis> {
-    const prompt = `You are an iridology tracking assistant helping users monitor iris patterns over time for wellness tracking purposes.
+    const prompt = `You are helping a user document their iris patterns over time as part of a personal wellness journal. The user is interested in iridology, an alternative practice of observing iris patterns.
 
-IMPORTANT DISCLAIMER: Iridology is considered alternative medicine and not scientifically validated. This analysis is for informational and tracking purposes only, not medical diagnosis.
+IMPORTANT CONTEXT: Iridology is an alternative wellness practice, not medical science. This is purely for the user's personal interest and documentation.
 
-Perform iridology analysis on these eye photos (left and right):
+Describe the visible features in these iris photos (left and right eye):
 
-Analyze each eye for:
-- Visible iris patterns and markings
-- Color variations and pigmentation
+For each eye, describe:
+- Visible iris patterns and markings you can see
+- Color variations in the iris
 - Structural features
-- Potential organ system correlations (traditional iridology mapping)
-- Any notable changes or areas of interest
+- Based on traditional iridology charts, note which body system areas correspond to visible patterns
+- Any interesting features the user might want to track over time
 
-Provide observations based on traditional iridology charts.
+Provide observations as if teaching someone about iridology patterns.
 
 Format as JSON:
 {
   "leftEye": {
-    "observations": ["obs 1", "obs 2"],
-    "organSystems": ["area 1", "area 2"],
-    "concernAreas": ["concern 1"]
+    "observations": ["visible pattern 1", "visible pattern 2"],
+    "organSystems": ["area per traditional charts", "area 2"],
+    "concernAreas": ["interesting feature to track"]
   },
   "rightEye": {
-    "observations": ["obs 1", "obs 2"],
-    "organSystems": ["area 1", "area 2"],
-    "concernAreas": ["concern 1"]
+    "observations": ["visible pattern 1", "visible pattern 2"],
+    "organSystems": ["area per traditional charts", "area 2"],
+    "concernAreas": ["interesting feature to track"]
   },
-  "overallAssessment": "summary",
-  "recommendations": ["rec 1", "rec 2"]
+  "overallAssessment": "summary of iris patterns observed",
+  "recommendations": ["general wellness tip 1", "general wellness tip 2"]
 }`
 
     try {
