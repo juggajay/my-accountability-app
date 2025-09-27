@@ -30,8 +30,9 @@ export async function POST(request: NextRequest) {
       success: true,
       analysis,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Posture analysis error:', error)
+    console.error('Error details:', error?.message, error?.response?.data)
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -40,8 +41,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const errorMessage = error?.message || error?.response?.data?.error?.message || 'Failed to analyze posture'
+
     return NextResponse.json(
-      { success: false, error: 'Failed to analyze posture' },
+      { success: false, error: errorMessage, details: error?.response?.data },
       { status: 500 }
     )
   }

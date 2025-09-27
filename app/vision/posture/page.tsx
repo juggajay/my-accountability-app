@@ -77,6 +77,18 @@ export default function PostureCheckPage() {
           </p>
         </div>
 
+        <PremiumCard className="bg-warning-900/20 border-warning-500/50">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">⚕️</span>
+            <div className="text-warning-300 text-sm">
+              <strong>Medical Disclaimer:</strong> This AI analysis is for informational and educational purposes only. 
+              It is not a substitute for professional medical advice, diagnosis, or treatment. 
+              Always consult with a qualified healthcare provider before starting any exercise program or making changes to your treatment plan, 
+              especially with conditions like L5-S1 sciatica.
+            </div>
+          </div>
+        </PremiumCard>
+
         {error && (
           <PremiumCard className="bg-danger-900/20 border-danger-500/50">
             <div className="text-danger-400">
