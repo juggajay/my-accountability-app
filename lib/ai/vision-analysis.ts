@@ -66,7 +66,9 @@ export interface ProgressComparison {
 
 export class VisionAnalysis {
   async analyzePostureSimple(imageBase64: string): Promise<PostureAnalysis> {
-    const prompt = `Analyze this photo for sciatica tracking (L5-S1 specifically):
+    const prompt = `You are a physical therapy assistant analyzing posture for health tracking purposes.
+
+Analyze this posture photo for sciatica tracking (L5-S1 specifically):
 
 1. Describe posture (head, shoulders, hips, spine alignment)
 2. Note any visible compensation patterns
@@ -135,7 +137,9 @@ Please format your response as JSON with this structure:
     imageBase64: string,
     exerciseName: string
   ): Promise<ExerciseFormAnalysis> {
-    const prompt = `Check exercise form for: ${exerciseName}
+    const prompt = `You are a fitness coach analyzing exercise form for health and safety purposes.
+
+Check exercise form for: ${exerciseName}
 
 Look for:
 - Spine alignment
@@ -200,7 +204,9 @@ Provide as JSON:
   }
 
   async analyzeFacialPain(imageBase64: string): Promise<FacialPainAnalysis> {
-    const prompt = `Analyze facial expression for pain indicators:
+    const prompt = `You are a health tracking assistant analyzing facial expressions for pain indicators to help with wellness monitoring.
+
+Analyze facial expression for pain indicators:
 - Tension in face/jaw
 - Eye squinting or strain
 - Overall expression
@@ -262,7 +268,9 @@ Format as JSON:
     beforeBase64: string,
     afterBase64: string
   ): Promise<ProgressComparison> {
-    const prompt = `Compare these two photos (before and after):
+    const prompt = `You are a fitness progress tracker helping users monitor their wellness journey.
+
+Compare these two photos (before and after):
 
 Note improvements or changes in:
 - Posture alignment
@@ -331,7 +339,9 @@ Format as JSON:
   }
 
   async analyzeFacialHealth(imageBase64: string): Promise<FacialHealthAnalysis> {
-    const prompt = `Analyze this facial photo for overall health indicators:
+    const prompt = `You are a wellness tracking assistant helping users monitor their facial health over time for general wellness purposes. This is not medical diagnosis.
+
+Analyze this facial photo for overall health indicators:
 
 Observe:
 - Skin health (color, clarity, hydration)
@@ -401,9 +411,11 @@ Format as JSON:
     leftEyeBase64: string,
     rightEyeBase64: string
   ): Promise<IridologyAnalysis> {
-    const prompt = `Perform iridology analysis on these eye photos (left and right):
+    const prompt = `You are an iridology tracking assistant helping users monitor iris patterns over time for wellness tracking purposes.
 
-IMPORTANT DISCLAIMER: Iridology is considered alternative medicine and not scientifically validated. This analysis is for informational and tracking purposes only.
+IMPORTANT DISCLAIMER: Iridology is considered alternative medicine and not scientifically validated. This analysis is for informational and tracking purposes only, not medical diagnosis.
+
+Perform iridology analysis on these eye photos (left and right):
 
 Analyze each eye for:
 - Visible iris patterns and markings
