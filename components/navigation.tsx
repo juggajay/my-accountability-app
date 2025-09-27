@@ -20,10 +20,10 @@ export function Navigation() {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-neutral-900/95 backdrop-blur-md border-b border-neutral-800">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            <Link href="/dashboard" className="text-xl font-bold text-primary-500">
+            <Link href="/dashboard" className="text-xl font-bold text-primary-400">
               MyApp
             </Link>
             
@@ -51,23 +51,29 @@ export function Navigation() {
                   menu.classList.toggle('hidden')
                 }
               }}
-              className="md:hidden p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              className="md:hidden p-2 rounded-lg hover:bg-neutral-800 text-neutral-300"
             >
               ☰
             </button>
           </div>
         </div>
 
-        <div id="mobile-menu" className="hidden md:hidden border-t border-neutral-200 dark:border-neutral-800">
+        <div id="mobile-menu" className="hidden md:hidden border-t border-neutral-200 dark:border-neutral-800 bg-neutral-900">
           <div className="px-4 py-2 space-y-1">
             {links.map(link => (
               <Link
                 key={link.href}
                 href={link.href}
+                onClick={() => {
+                  const menu = document.getElementById('mobile-menu')
+                  if (menu) {
+                    menu.classList.add('hidden')
+                  }
+                }}
                 className={`block px-3 py-2 rounded-lg text-sm font-medium ${
                   pathname === link.href
                     ? 'bg-primary-500 text-white'
-                    : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                    : 'text-neutral-300 hover:bg-neutral-800'
                 }`}
               >
                 <span className="mr-2">{link.icon}</span>
