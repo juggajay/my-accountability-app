@@ -378,26 +378,39 @@ export default function WeeklyCheckPage() {
                         className="w-full h-auto"
                       />
                     </div>
-                    <div className="flex gap-3">
-                      <Button
-                        onClick={() => {
-                          setPhotos((prev) => ({ ...prev, [currentStep]: null }))
-                        }}
-                        variant="danger"
-                        className="flex-1"
-                      >
-                        🗑️ Remove
-                      </Button>
-                      <Button
-                        onClick={handleTakePhoto}
-                        className="flex-1 bg-neutral-700 hover:bg-neutral-600"
-                      >
-                        🔄 Retake
-                      </Button>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex gap-3">
+                        <Button
+                          onClick={handleTakePhoto}
+                          className="flex-1 bg-neutral-700 hover:bg-neutral-600"
+                        >
+                          📷 Retake
+                        </Button>
+                        <label className="cursor-pointer flex-1">
+                          <div className="w-full px-6 py-3 bg-neutral-700 hover:bg-neutral-600 text-white font-semibold rounded-lg transition-colors text-center">
+                            📁 Replace
+                          </div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handlePhotoCapture}
+                            className="hidden"
+                          />
+                        </label>
+                        <Button
+                          onClick={() => {
+                            setPhotos((prev) => ({ ...prev, [currentStep]: null }))
+                          }}
+                          variant="danger"
+                          className="flex-1"
+                        >
+                          🗑️ Remove
+                        </Button>
+                      </div>
                       {currentStepIndex < photoSteps.length - 1 && (
                         <Button
                           onClick={() => setCurrentStep(photoSteps[currentStepIndex + 1].type)}
-                          className="flex-1"
+                          className="w-full"
                         >
                           Next →
                         </Button>
