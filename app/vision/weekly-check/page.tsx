@@ -5,7 +5,7 @@ import { PremiumCard } from '@/components/ui/premium-card'
 import { Button } from '@/components/ui/button'
 import { format } from 'date-fns'
 
-type PhotoType = 'posture' | 'face' | 'leftEye' | 'rightEye' | 'sideProfile' | 'backView' | 'seatedPosture' | 'hands' | 'forwardBend'
+type PhotoType = 'posture' | 'face' | 'leftEye' | 'rightEye' | 'sideProfile' | 'backView' | 'hands' | 'forwardBend'
 
 interface Photos {
   posture: string | null
@@ -14,7 +14,6 @@ interface Photos {
   rightEye: string | null
   sideProfile: string | null
   backView: string | null
-  seatedPosture: string | null
   hands: string | null
   forwardBend: string | null
 }
@@ -28,7 +27,6 @@ export default function WeeklyCheckPage() {
     rightEye: null,
     sideProfile: null,
     backView: null,
-    seatedPosture: null,
     hands: null,
     forwardBend: null,
   })
@@ -80,12 +78,6 @@ export default function WeeklyCheckPage() {
       icon: '🔙',
     },
     {
-      type: 'seatedPosture',
-      title: 'Seated Posture',
-      instructions: 'Sit in your typical work chair, side view. Shows desk posture, lower back support, forward head in seated position.',
-      icon: '💺',
-    },
-    {
       type: 'hands',
       title: 'Hands',
       instructions: 'Both hands palms down, fingers spread, good lighting. Shows circulation, inflammation, joint issues.',
@@ -131,7 +123,7 @@ export default function WeeklyCheckPage() {
 
   const handleAnalyzeAll = async () => {
     if (!allPhotosComplete) {
-      alert('Please capture all 9 photos first')
+      alert('Please capture all 8 photos first')
       return
     }
 
@@ -144,7 +136,6 @@ export default function WeeklyCheckPage() {
         iridologyRes,
         sideProfileRes,
         backViewRes,
-        seatedPostureRes,
         handsRes,
         forwardBendRes,
       ] = await Promise.all([
@@ -185,13 +176,6 @@ export default function WeeklyCheckPage() {
             imageBase64: photos.backView!.split(',')[1],
           }),
         }),
-        fetch('/api/vision/seated-posture', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            imageBase64: photos.seatedPosture!.split(',')[1],
-          }),
-        }),
         fetch('/api/vision/hands', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -214,7 +198,6 @@ export default function WeeklyCheckPage() {
         iridologyData,
         sideProfileData,
         backViewData,
-        seatedPostureData,
         handsData,
         forwardBendData,
       ] = await Promise.all([
@@ -223,7 +206,6 @@ export default function WeeklyCheckPage() {
         iridologyRes.json(),
         sideProfileRes.json(),
         backViewRes.json(),
-        seatedPostureRes.json(),
         handsRes.json(),
         forwardBendRes.json(),
       ])
@@ -248,10 +230,6 @@ export default function WeeklyCheckPage() {
         setError(`Back view analysis failed: ${backViewData.error || 'Unknown error'}`)
         return
       }
-      if (!seatedPostureData.success) {
-        setError(`Seated posture analysis failed: ${seatedPostureData.error || 'Unknown error'}`)
-        return
-      }
       if (!handsData.success) {
         setError(`Hands analysis failed: ${handsData.error || 'Unknown error'}`)
         return
@@ -267,7 +245,6 @@ export default function WeeklyCheckPage() {
         iridology: iridologyData.analysis,
         sideProfile: sideProfileData.analysis,
         backView: backViewData.analysis,
-        seatedPosture: seatedPostureData.analysis,
         hands: handsData.analysis,
         forwardBend: forwardBendData.analysis,
       }
@@ -303,7 +280,7 @@ export default function WeeklyCheckPage() {
         <div>
           <h1 className="text-3xl font-bold text-white">Weekly Health Check</h1>
           <p className="text-neutral-400 mt-2">
-            Complete comprehensive 9-photo analysis: Posture, Face, Eyes, Alignment, Flexibility
+            Complete comprehensive 8-photo analysis: Posture, Face, Eyes, Alignment, Flexibility
           </p>
           {lastCheckDate && (
             <p className="text-sm text-neutral-500 mt-1">
@@ -362,7 +339,7 @@ export default function WeeklyCheckPage() {
                     {currentStepData.icon} {currentStepData.title}
                   </h2>
                   <span className="text-sm text-neutral-400">
-                    Step {currentStepIndex + 1}/9
+                    Step {currentStepIndex + 1}/8
                   </span>
                 </div>
 
@@ -439,7 +416,7 @@ export default function WeeklyCheckPage() {
             <PremiumCard variant="gradient">
               <h2 className="text-2xl font-bold mb-4">✅ Weekly Check Complete!</h2>
               <p className="text-neutral-300">
-                Your comprehensive 9-photo analysis is ready. Review each section below.
+                Your comprehensive 8-photo analysis is ready. Review each section below.
               </p>
             </PremiumCard>
 
@@ -733,40 +710,6 @@ export default function WeeklyCheckPage() {
               </PremiumCard>
             )}
 
-            {analysis.seatedPosture && (
-              <PremiumCard>
-                <h3 className="text-xl font-bold mb-3">💺 Seated Posture Analysis</h3>
-                <div className="space-y-2">
-                  <div>
-                    <strong className="text-primary-400">Health Score:</strong> {analysis.seatedPosture.healthScore}/100
-                  </div>
-                  <div><strong>Lower Back Support:</strong> {analysis.seatedPosture.lowerBackSupport}</div>
-                  <div><strong>Head Position:</strong> {analysis.seatedPosture.forwardHeadInSeated}</div>
-                  <div><strong>Shoulder Position:</strong> {analysis.seatedPosture.shoulderPosition}</div>
-                  {analysis.seatedPosture.workPostureIssues?.length > 0 && (
-                    <div>
-                      <strong className="text-warning-400">Issues Detected:</strong>
-                      <ul className="list-disc ml-5 mt-1">
-                        {analysis.seatedPosture.workPostureIssues.map((issue: string, i: number) => (
-                          <li key={i} className="text-neutral-300">{issue}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {analysis.seatedPosture.recommendations?.length > 0 && (
-                    <div>
-                      <strong className="text-success-400">Recommendations:</strong>
-                      <ul className="list-disc ml-5 mt-1">
-                        {analysis.seatedPosture.recommendations.map((r: string, i: number) => (
-                          <li key={i} className="text-neutral-300">{r}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              </PremiumCard>
-            )}
-
             {analysis.hands && (
               <PremiumCard>
                 <h3 className="text-xl font-bold mb-3">🤲 Hands Analysis</h3>
@@ -854,7 +797,6 @@ export default function WeeklyCheckPage() {
                   rightEye: null,
                   sideProfile: null,
                   backView: null,
-                  seatedPosture: null,
                   hands: null,
                   forwardBend: null,
                 })
