@@ -83,6 +83,16 @@ export default function ExerciseDetailPage() {
           ← Back to Library
         </button>
 
+        {exercise.thumbnail_url && (
+          <PremiumCard className="p-0 overflow-hidden">
+            <img 
+              src={exercise.thumbnail_url} 
+              alt={exercise.name}
+              className="w-full h-64 object-cover"
+            />
+          </PremiumCard>
+        )}
+
         <div>
           <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
             {exercise.name}

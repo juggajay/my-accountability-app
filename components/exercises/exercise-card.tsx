@@ -29,17 +29,46 @@ export function ExerciseCard({ exercise }: ExerciseCardProps) {
   const difficultyColor = DIFFICULTY_COLORS[exercise.difficulty as keyof typeof DIFFICULTY_COLORS] || 'text-neutral-500'
   const durationMinutes = Math.ceil(exercise.duration_seconds / 60)
 
+  const categoryEmojis: Record<string, string> = {
+    stretching: '🧘',
+    core: '💪',
+    balance: '🤸',
+    strengthening: '🏋️',
+    mobility: '🔄',
+  }
+
   return (
     <Link href={`/exercises/${exercise.id}`}>
       <PremiumCard className="hover:scale-105 transition-transform cursor-pointer h-full">
         <div className="space-y-3">
+          {exercise.thumbnail_url ? (
+            <div className="relative w-full h-48 rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-800">
+              <img 
+                src={exercise.thumbnail_url} 
+                alt={exercise.name}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute top-2 right-2">
+                <span className={`text-xs font-medium px-2 py-1 rounded-full bg-white/90 dark:bg-neutral-900/90 ${difficultyColor}`}>
+                  {difficultyLabel}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="relative w-full h-48 rounded-lg overflow-hidden bg-gradient-to-br from-primary-500/10 to-primary-600/20 flex items-center justify-center">
+              <span className="text-6xl">{categoryEmojis[exercise.category] || '🏃'}</span>
+              <div className="absolute top-2 right-2">
+                <span className={`text-xs font-medium px-2 py-1 rounded-full bg-white/90 dark:bg-neutral-900/90 ${difficultyColor}`}>
+                  {difficultyLabel}
+                </span>
+              </div>
+            </div>
+          )}
+          
           <div className="flex items-start justify-between">
             <h3 className="font-semibold text-lg text-neutral-900 dark:text-white">
               {exercise.name}
             </h3>
-            <span className={`text-xs font-medium px-2 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 ${difficultyColor}`}>
-              {difficultyLabel}
-            </span>
           </div>
 
           <div className="flex items-center gap-4 text-sm text-neutral-600 dark:text-neutral-400">
