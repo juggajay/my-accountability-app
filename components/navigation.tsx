@@ -8,9 +8,10 @@ export function Navigation() {
 
   const links = [
     { href: '/dashboard', label: 'Dashboard', icon: '📊' },
+    { href: '/analytics', label: 'Analytics', icon: '📈' },
     { href: '/track/pain', label: 'Pain', icon: '🩹' },
     { href: '/exercises', label: 'Exercises', icon: '💪' },
-    { href: '/vision/posture', label: 'Posture Check', icon: '📸' },
+    { href: '/vision/posture', label: 'Posture', icon: '📸' },
     { href: '/track/alcohol', label: 'Alcohol', icon: '🍺' },
     { href: '/track/spending', label: 'Spending', icon: '💰' },
     { href: '/goals', label: 'Goals', icon: '🎯' },
