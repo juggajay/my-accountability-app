@@ -6,6 +6,7 @@ import {
   analyzeInflammation,
   calculateHealthScores,
 } from './google-vision'
+import { MEDICAL_ANALYSIS_CONTEXT } from './medical-analysis-prompt'
 
 export interface PostureAnalysis {
   description: string
@@ -132,27 +133,28 @@ export interface ProgressComparison {
 
 export class VisionAnalysis {
   async analyzePostureSimple(imageBase64: string): Promise<PostureAnalysis> {
-    const prompt = `You are a physical therapy assistant analyzing posture for health tracking purposes.
+    const prompt = `${MEDICAL_ANALYSIS_CONTEXT}
 
-Analyze this posture photo for sciatica tracking (L5-S1 specifically):
+TASK: Analyze this posture photo using professional postural assessment protocols.
 
-1. Describe posture (head, shoulders, hips, spine alignment)
-2. Note any visible compensation patterns
-3. Compare to ideal posture
-4. Suggest specific corrections
-5. Rate overall posture (1-10)
+Apply systematic examination:
+1. **Five-Point Alignment**: Check external auditory meatus, acromioclavicular joint, greater trochanter, fibular head, lateral malleolus alignment
+2. **Craniovertebral Angle**: Assess forward head posture severity
+3. **Syndrome Screening**: Upper Crossed (protracted shoulders, tight pecs/posterior neck) or Lower Crossed (anterior pelvic tilt, tight hip flexors)
+4. **Compensation Patterns**: Identify specific muscle imbalances
+5. **Symmetry**: Check for lateral deviations, uneven shoulders/hips
 
-Be specific and actionable for someone with L5-S1 sciatica.
-
-Please format your response as JSON with this structure:
+Format as JSON:
 {
-  "description": "detailed posture description",
-  "compensationPatterns": ["pattern1", "pattern2"],
-  "comparisonToIdeal": "comparison text",
-  "corrections": ["correction1", "correction2"],
+  "description": "detailed anatomical assessment with specific observations",
+  "compensationPatterns": ["pattern with affected muscles/structures", "another pattern"],
+  "comparisonToIdeal": "precise deviations from ideal alignment with clinical context",
+  "corrections": ["evidence-based corrective exercise with technique", "specific postural cue"],
   "rating": 7,
-  "rawAnalysis": "full analysis text"
-}`
+  "rawAnalysis": "comprehensive integrated analysis"
+}
+
+Be specific, evidence-based, and actionable. This is for personal health tracking.`
 
     try {
       const response = await openai.chat.completions.create({
