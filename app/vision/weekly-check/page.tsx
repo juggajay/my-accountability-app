@@ -24,6 +24,7 @@ export default function WeeklyCheckPage() {
   })
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysis, setAnalysis] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
   const [lastCheckDate, setLastCheckDate] = useState<string | null>(null)
 
   useEffect(() => {
@@ -95,6 +96,7 @@ export default function WeeklyCheckPage() {
     }
 
     setIsAnalyzing(true)
+    setError(null)
     try {
       const [postureRes, faceRes, iridologyRes] = await Promise.all([
         fetch('/api/vision/posture', {
@@ -128,18 +130,30 @@ export default function WeeklyCheckPage() {
         iridologyRes.json(),
       ])
 
-      if (postureData.success && faceData.success && iridologyData.success) {
-        setAnalysis({
-          posture: postureData.analysis,
-          facial: faceData.analysis,
-          iridology: iridologyData.analysis,
-        })
-        
-        localStorage.setItem('lastWeeklyCheck', new Date().toISOString())
-        setLastCheckDate(new Date().toISOString())
+      if (!postureData.success) {
+        setError(`Posture analysis failed: ${postureData.error || 'Unknown error'}`)
+        return
       }
+      if (!faceData.success) {
+        setError(`Facial health analysis failed: ${faceData.error || 'Unknown error'}`)
+        return
+      }
+      if (!iridologyData.success) {
+        setError(`Iridology analysis failed: ${iridologyData.error || 'Unknown error'}`)
+        return
+      }
+
+      setAnalysis({
+        posture: postureData.analysis,
+        facial: faceData.analysis,
+        iridology: iridologyData.analysis,
+      })
+
+      localStorage.setItem('lastWeeklyCheck', new Date().toISOString())
+      setLastCheckDate(new Date().toISOString())
     } catch (error) {
       console.error('Analysis error:', error)
+      setError(`Failed to analyze: ${error instanceof Error ? error.message : 'Network error'}`)
     } finally {
       setIsAnalyzing(false)
     }
@@ -172,6 +186,18 @@ export default function WeeklyCheckPage() {
             </div>
           </div>
         </PremiumCard>
+
+        {error && (
+          <PremiumCard className="bg-danger-900/20 border-danger-500/50">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">❌</span>
+              <div>
+                <strong className="text-danger-300">Analysis Error:</strong>
+                <p className="text-danger-200 text-sm mt-1">{error}</p>
+              </div>
+            </div>
+          </PremiumCard>
+        )}
 
         {!analysis && (
           <>
