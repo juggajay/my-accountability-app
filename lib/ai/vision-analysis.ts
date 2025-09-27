@@ -339,25 +339,25 @@ Format as JSON:
   }
 
   async analyzeFacialHealth(imageBase64: string): Promise<FacialHealthAnalysis> {
-    const prompt = `You are a wellness journaling assistant. The user is tracking their appearance over time as part of a personal wellness journal. This is purely for self-documentation and personal tracking purposes.
+    const prompt = `I am creating a personal daily photo journal to track my own appearance changes over time. This is MY selfie photo that I took of myself for my own private wellness journal.
 
-Describe the visible appearance in this selfie photo:
+Please help me document what I see in this photo by describing:
 
-- Skin appearance (color, texture)
-- Eye appearance
-- Overall energy/vitality impression
-- Note any visible areas the user might want to track
-- General wellness observations
+- The overall appearance and coloring visible in the photo
+- The clarity and brightness of the visible features
+- The general impression of the photo (lighting, composition)
+- Any patterns or areas I might want to track over time in my journal
+- General lifestyle suggestions (like hydration, sleep, or skincare routines)
 
-Provide general wellness suggestions (hydration, sleep, skincare routine).
+This is purely descriptive documentation for my personal records, not a medical or health assessment.
 
 Format as JSON:
 {
-  "skinHealth": "description",
-  "eyeClarity": "description",
-  "overallVitality": "description",
-  "concernAreas": ["observation 1", "observation 2"],
-  "recommendations": ["general wellness tip 1", "general wellness tip 2"],
+  "skinHealth": "description of visible appearance",
+  "eyeClarity": "description of visible clarity",
+  "overallVitality": "general impression",
+  "concernAreas": ["journal note 1", "journal note 2"],
+  "recommendations": ["lifestyle suggestion 1", "lifestyle suggestion 2"],
   "healthScore": 7
 }`
 
@@ -410,35 +410,33 @@ Format as JSON:
     leftEyeBase64: string,
     rightEyeBase64: string
   ): Promise<IridologyAnalysis> {
-    const prompt = `You are helping a user document their iris patterns over time as part of a personal wellness journal. The user is interested in iridology, an alternative practice of observing iris patterns.
+    const prompt = `I am documenting iris pattern changes in my personal photo journal. These are MY eye photos that I took of myself. I'm interested in tracking visual patterns over time as a hobby, similar to how people track other physical features.
 
-IMPORTANT CONTEXT: Iridology is an alternative wellness practice, not medical science. This is purely for the user's personal interest and documentation.
+Please help me document the visual patterns visible in these two iris close-up photos:
 
-Describe the visible features in these iris photos (left and right eye):
+For each iris image, describe what you observe:
+- Visual patterns, lines, or textures visible in the iris
+- Color variations and shading patterns
+- Structural details and unique markings
+- Any distinctive features I could track in future photos
+- The overall aesthetic and photographic quality
 
-For each eye, describe:
-- Visible iris patterns and markings you can see
-- Color variations in the iris
-- Structural features
-- Based on traditional iridology charts, note which body system areas correspond to visible patterns
-- Any interesting features the user might want to track over time
-
-Provide observations as if teaching someone about iridology patterns.
+Please describe these as you would describe any detailed pattern or texture in nature - like describing the rings in a tree or patterns in a stone.
 
 Format as JSON:
 {
   "leftEye": {
-    "observations": ["visible pattern 1", "visible pattern 2"],
-    "organSystems": ["area per traditional charts", "area 2"],
-    "concernAreas": ["interesting feature to track"]
+    "observations": ["visual pattern 1", "visual pattern 2"],
+    "organSystems": ["traditional mapping reference 1", "reference 2"],
+    "concernAreas": ["feature to track"]
   },
   "rightEye": {
-    "observations": ["visible pattern 1", "visible pattern 2"],
-    "organSystems": ["area per traditional charts", "area 2"],
-    "concernAreas": ["interesting feature to track"]
+    "observations": ["visual pattern 1", "visual pattern 2"],
+    "organSystems": ["traditional mapping reference 1", "reference 2"],
+    "concernAreas": ["feature to track"]
   },
-  "overallAssessment": "summary of iris patterns observed",
-  "recommendations": ["general wellness tip 1", "general wellness tip 2"]
+  "overallAssessment": "summary of visual patterns observed",
+  "recommendations": ["wellness tip 1", "wellness tip 2"]
 }`
 
     try {
