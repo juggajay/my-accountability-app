@@ -213,9 +213,22 @@ export default function WeeklyCheckPage() {
                 {!photos[currentStep] ? (
                   <div className="flex flex-col items-center justify-center py-8 space-y-4">
                     <div className="text-6xl mb-2">{currentStepData.icon}</div>
-                    <Button onClick={handleTakePhoto} className="w-full max-w-xs">
-                      📷 Capture {currentStepData.title}
-                    </Button>
+                    <div className="flex flex-col gap-3 w-full max-w-xs">
+                      <Button onClick={handleTakePhoto} className="w-full">
+                        📷 Take Photo
+                      </Button>
+                      <label className="cursor-pointer">
+                        <div className="w-full px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-lg transition-colors text-center">
+                          📁 Upload Photo
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handlePhotoCapture}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-4">
