@@ -207,7 +207,7 @@
   @apply text-3xl font-mono font-bold tabular-nums;
 }
 
-/* Base Styles */
+/* Base Styles - Force Dark Mode */
 html {
   background-color: #0a0a0a !important;
   color-scheme: dark !important;
@@ -226,9 +226,77 @@ body > main,
   background-color: #0a0a0a !important;
 }
 
-/* Force light text color */
-h1, h2, h3, h4, h5, h6, p, span, div, a, button, input, textarea, label {
-  color: inherit;
+/* Ensure all text elements use proper dark mode colors */
+.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+  color: #fafafa !important;
+}
+
+.dark p, .dark span, .dark div, .dark li {
+  color: #fafafa;
+}
+
+/* Dark mode text colors for specific elements */
+.dark .text-neutral-900 {
+  color: #fafafa !important;
+}
+
+.dark .text-neutral-800 {
+  color: #fafafa !important;
+}
+
+.dark .text-neutral-700 {
+  color: #d4d4d4 !important;
+}
+
+.dark .text-neutral-600 {
+  color: #a3a3a3 !important;
+}
+
+.dark .text-neutral-500 {
+  color: #737373 !important;
+}
+
+.dark .text-neutral-400 {
+  color: #a3a3a3 !important;
+}
+
+.dark .text-neutral-300 {
+  color: #d4d4d4 !important;
+}
+
+/* Dark mode backgrounds */
+.dark .bg-neutral-50 {
+  background-color: #0a0a0a !important;
+}
+
+.dark .bg-neutral-100 {
+  background-color: #171717 !important;
+}
+
+.dark .bg-neutral-200 {
+  background-color: #262626 !important;
+}
+
+.dark .bg-white {
+  background-color: #171717 !important;
+}
+
+/* Cards and containers */
+.dark .bg-white\/80 {
+  background-color: rgba(23, 23, 23, 0.8) !important;
+}
+
+.dark .bg-white\/50 {
+  background-color: rgba(23, 23, 23, 0.5) !important;
+}
+
+/* Borders */
+.dark .border-neutral-200 {
+  border-color: #404040 !important;
+}
+
+.dark .border-neutral-300 {
+  border-color: #525252 !important;
 }
 
 /* Custom Utility Classes */
