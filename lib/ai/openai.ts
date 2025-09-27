@@ -10,6 +10,7 @@ export const openai = new OpenAI({
 
 export const MODELS = {
   GPT4: 'gpt-4-turbo-preview',
+  GPT4O: 'gpt-4o',
   GPT35: 'gpt-3.5-turbo',
 } as const
 

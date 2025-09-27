@@ -8,6 +8,7 @@ export default function PostureCheckPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysis, setAnalysis] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -25,6 +26,7 @@ export default function PostureCheckPage() {
     if (!selectedImage) return
 
     setIsAnalyzing(true)
+    setError(null)
     try {
       const base64 = selectedImage.split(',')[1]
       
@@ -41,10 +43,13 @@ export default function PostureCheckPage() {
 
       if (result.success) {
         setAnalysis(result.analysis)
+        setError(null)
       } else {
-        console.error('Analysis failed:', result.error)
+        setError(result.error || 'Failed to analyze image')
+        console.error('Analysis failed:', result)
       }
     } catch (error) {
+      setError('Network error - please try again')
       console.error('Analysis error:', error)
     } finally {
       setIsAnalyzing(false)
@@ -71,6 +76,14 @@ export default function PostureCheckPage() {
             Upload or take a photo for AI-powered posture analysis
           </p>
         </div>
+
+        {error && (
+          <PremiumCard className="bg-danger-900/20 border-danger-500/50">
+            <div className="text-danger-400">
+              <strong>Error:</strong> {error}
+            </div>
+          </PremiumCard>
+        )}
 
         <PremiumCard>
           <div className="space-y-4">
