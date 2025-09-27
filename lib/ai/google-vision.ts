@@ -4,26 +4,34 @@ let client: vision.ImageAnnotatorClient | null = null
 
 function getClient() {
   if (!client) {
-    if (process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64) {
-      const credentialsJson = Buffer.from(
-        process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64,
-        'base64'
-      ).toString('utf-8')
-      const credentials = JSON.parse(credentialsJson)
-      client = new vision.ImageAnnotatorClient({
-        credentials,
-      })
-    } else if (process.env.GOOGLE_CLOUD_CREDENTIALS_JSON) {
-      const credentials = JSON.parse(process.env.GOOGLE_CLOUD_CREDENTIALS_JSON)
-      client = new vision.ImageAnnotatorClient({
-        credentials,
-      })
-    } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-      client = new vision.ImageAnnotatorClient()
-    } else {
-      throw new Error(
-        'Google Cloud credentials not found. Set GOOGLE_CLOUD_CREDENTIALS_BASE64, GOOGLE_CLOUD_CREDENTIALS_JSON, or GOOGLE_APPLICATION_CREDENTIALS'
-      )
+    try {
+      if (process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64) {
+        console.log('Using GOOGLE_CLOUD_CREDENTIALS_BASE64')
+        const credentialsJson = Buffer.from(
+          process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64,
+          'base64'
+        ).toString('utf-8')
+        const credentials = JSON.parse(credentialsJson)
+        client = new vision.ImageAnnotatorClient({
+          credentials,
+        })
+      } else if (process.env.GOOGLE_CLOUD_CREDENTIALS_JSON) {
+        console.log('Using GOOGLE_CLOUD_CREDENTIALS_JSON')
+        const credentials = JSON.parse(process.env.GOOGLE_CLOUD_CREDENTIALS_JSON)
+        client = new vision.ImageAnnotatorClient({
+          credentials,
+        })
+      } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+        console.log('Using GOOGLE_APPLICATION_CREDENTIALS')
+        client = new vision.ImageAnnotatorClient()
+      } else {
+        throw new Error(
+          'Google Cloud credentials not found. Set GOOGLE_CLOUD_CREDENTIALS_BASE64, GOOGLE_CLOUD_CREDENTIALS_JSON, or GOOGLE_APPLICATION_CREDENTIALS'
+        )
+      }
+    } catch (error) {
+      console.error('Failed to create Vision client:', error)
+      throw error
     }
   }
   return client
