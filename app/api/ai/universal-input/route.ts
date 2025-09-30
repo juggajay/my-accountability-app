@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { parseCommand, isCommand } from '@/lib/ai/command-parser'
 import { analyzeFoodPhoto, estimateCaloriesFromText, inferMealType, generateFoodConfirmation } from '@/lib/ai/food-analyzer'
+import { analyzeReceipt, generateReceiptConfirmation } from '@/lib/ai/receipt-ocr'
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,9 +48,64 @@ async function handlePhotoInput(
   imageType: string,
   additionalContext?: string
 ) {
-  // For now, assume all photos are food photos
-  // In future, we can add image classification to determine type
-  const photoType = 'meal'
+  // Determine photo type based on context or use AI classification
+  const photoType = await classifyPhotoType(imageBase64, additionalContext)
+
+  if (photoType === 'receipt') {
+    // Analyze receipt
+    const analysis = await analyzeReceipt(imageBase64)
+
+    if (analysis.needsClarification) {
+      return NextResponse.json({
+        success: true,
+        action: 'request_clarification',
+        message: generateReceiptConfirmation(analysis),
+        data: {
+          analysis,
+          clarificationNeeded: true,
+        },
+      })
+    }
+
+    // Log spending from receipt
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Store receipt in photo archive
+    const { data: photoRecord } = await supabase
+      .from('photo_archive')
+      .insert({
+        user_id: user.id,
+        photo_type: 'receipt',
+        photo_base64: imageBase64,
+        analysis_result: analysis,
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single()
+
+    // Log spending entry
+    const { error } = await supabase.from('spending').insert({
+      user_id: user.id,
+      amount: analysis.totalAmount,
+      category: analysis.detectedCategories[0] || 'other',
+      description: `${analysis.merchantName || 'Purchase'} (from receipt)`,
+      merchant: analysis.merchantName,
+      date: analysis.date || new Date().toISOString().split('T')[0],
+      created_at: new Date().toISOString(),
+    })
+
+    if (error) throw error
+
+    return NextResponse.json({
+      success: true,
+      action: 'receipt_logged',
+      message: generateReceiptConfirmation(analysis),
+      data: { analysis },
+    })
+  }
 
   if (photoType === 'meal') {
     // Analyze food photo
@@ -425,4 +481,30 @@ async function handleMoodLog(supabase: any, parsed: any) {
     message,
     data: { logEntry: data },
   })
+}
+
+/**
+ * Classify photo type (receipt, meal, exercise, etc.)
+ */
+async function classifyPhotoType(
+  imageBase64: string,
+  context?: string
+): Promise<'receipt' | 'meal' | 'exercise' | 'other'> {
+  // Quick context-based classification
+  if (context) {
+    const lowerContext = context.toLowerCase()
+    if (lowerContext.includes('receipt') || lowerContext.includes('purchase') || lowerContext.includes('bought')) {
+      return 'receipt'
+    }
+    if (lowerContext.includes('food') || lowerContext.includes('meal') || lowerContext.includes('ate') || lowerContext.includes('lunch') || lowerContext.includes('dinner') || lowerContext.includes('breakfast')) {
+      return 'meal'
+    }
+    if (lowerContext.includes('workout') || lowerContext.includes('exercise') || lowerContext.includes('gym')) {
+      return 'exercise'
+    }
+  }
+
+  // Default to meal for now (most common use case)
+  // In future, can add AI-based image classification
+  return 'meal'
 }

@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { buildDailyContext, saveDailyContext, getProactiveInsights } from '@/lib/ai/context-builder'
 import { shouldAskDiscoveryQuestion, generateDiscoveryConversationStarter } from '@/lib/ai/discovery-engine'
+import { getUserContext, generateContextSummary } from '@/lib/ai/context-engine'
 import { createClient } from '@/lib/supabase/server'
 import OpenAI from 'openai'
 

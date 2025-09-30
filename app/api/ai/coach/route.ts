@@ -4,6 +4,7 @@ import { generateCompletion, MODELS } from '@/lib/ai/openai'
 import { SYSTEM_PROMPTS, buildCoachPrompt } from '@/lib/ai/prompts'
 import { buildDailyContext, getUserMemories } from '@/lib/ai/context-builder'
 import { shouldAskDiscoveryQuestion, getNextDiscoveryQuestion } from '@/lib/ai/discovery-engine'
+import { getUserContext, generateContextSummary } from '@/lib/ai/context-engine'
 import { z } from 'zod'
 
 const messageSchema = z.object({

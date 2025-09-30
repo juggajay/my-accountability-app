@@ -8,6 +8,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { PremiumCard } from '@/components/ui/premium-card'
 import { Sparkles, Send, Loader2, MessageCircle, Camera, Image as ImageIcon } from 'lucide-react'
+import { VoiceInput } from './VoiceInput'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -295,12 +296,24 @@ export function AIConversationCard() {
           >
             <Camera className="w-5 h-5" />
           </button>
+          <VoiceInput
+            onTranscript={(text) => {
+              setInput(text)
+              // Auto-send after voice input
+              setTimeout(() => {
+                if (text.trim()) {
+                  handleSend()
+                }
+              }, 500)
+            }}
+            disabled={loading}
+          />
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Type or upload a photo..."
+            placeholder="Type, speak, or upload a photo..."
             disabled={loading}
             className="flex-1 px-4 py-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10 focus:border-primary-400 focus:outline-none text-white placeholder:text-white/40 disabled:opacity-50"
           />
