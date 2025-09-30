@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { Card } from '@/components/ui/Card'
+import { PremiumCard } from '@/components/ui/premium-card'
 import { Sparkles, TrendingUp, AlertCircle, Trophy, MessageCircle, Target } from 'lucide-react'
 
 interface ProactiveInsight {
@@ -123,7 +123,7 @@ export function ProactiveInsights() {
 
   if (loading) {
     return (
-      <Card variant="glass" className="p-6">
+      <PremiumCard variant="glass">
         <div className="flex items-center gap-3 mb-4">
           <Sparkles className="w-5 h-5 text-primary-400" />
           <h3 className="text-lg font-semibold">AI Insights</h3>
@@ -136,25 +136,25 @@ export function ProactiveInsights() {
             </div>
           ))}
         </div>
-      </Card>
+      </PremiumCard>
     )
   }
 
   if (error) {
     return (
-      <Card variant="glass" className="p-6">
+      <PremiumCard variant="glass">
         <div className="flex items-center gap-3 mb-4">
           <Sparkles className="w-5 h-5 text-primary-400" />
           <h3 className="text-lg font-semibold">AI Insights</h3>
         </div>
         <p className="text-sm text-red-400">Unable to load insights. Try refreshing.</p>
-      </Card>
+      </PremiumCard>
     )
   }
 
   if (visibleInsights.length === 0) {
     return (
-      <Card variant="glass" className="p-6">
+      <PremiumCard variant="glass">
         <div className="flex items-center gap-3 mb-4">
           <Sparkles className="w-5 h-5 text-primary-400" />
           <h3 className="text-lg font-semibold">AI Insights</h3>
@@ -162,12 +162,12 @@ export function ProactiveInsights() {
         <p className="text-sm text-white/60">
           Keep logging your activities and I'll share personalized insights based on your patterns.
         </p>
-      </Card>
+      </PremiumCard>
     )
   }
 
   return (
-    <Card variant="glass" className="p-6">
+    <PremiumCard variant="glass">
       <div className="flex items-center gap-3 mb-4">
         <Sparkles className="w-5 h-5 text-primary-400" />
         <h3 className="text-lg font-semibold">AI Insights</h3>
@@ -238,6 +238,6 @@ export function ProactiveInsights() {
           Show more insights
         </button>
       )}
-    </Card>
+    </PremiumCard>
   )
 }
