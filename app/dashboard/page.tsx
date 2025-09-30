@@ -1,6 +1,7 @@
 import { PremiumCard } from '@/components/ui/premium-card'
 import { MetricDisplay } from '@/components/ui/metric-display'
 import { ProgressRing } from '@/components/ui/progress-ring'
+import { AIConversationCard } from '@/components/ai/AIConversationCard'
 import { ProactiveInsights } from '@/components/ai/ProactiveInsights'
 import { getDailyLog, getWeekLogs, getRecentExerciseSessions, getActiveGoals, getRecentInsights } from '@/lib/supabase/queries'
 import { calculateRecoveryScore, calculateStreak, calculateTrend, getTimeOfDay, getDayCount } from '@/lib/utils'
@@ -47,36 +48,11 @@ export default async function DashboardPage() {
       </div>
       
       <div className="px-6 -mt-4 pb-8 space-y-6">
-        {/* Recovery Score Overview */}
-        <PremiumCard variant="glass">
-          <h2 className="text-lg font-semibold mb-4">Today&apos;s Recovery Score</h2>
-          <div className="grid grid-cols-3 gap-6">
-            <div className="flex flex-col items-center">
-              <ProgressRing 
-                progress={recoveryScore.overall} 
-                color="primary" 
-                label="Overall" 
-              />
-            </div>
-            <div className="flex flex-col items-center">
-              <ProgressRing 
-                progress={recoveryScore.energy} 
-                color="success" 
-                label="Energy" 
-              />
-            </div>
-            <div className="flex flex-col items-center">
-              <ProgressRing 
-                progress={recoveryScore.painFree} 
-                color="warning" 
-                label="Pain Free" 
-              />
-            </div>
-          </div>
-        </PremiumCard>
-        
-        {/* Quick Metrics */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* AI Conversation - Main Feature */}
+        <AIConversationCard />
+
+        {/* Quick Metrics - Condensed */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <PremiumCard variant="metric">
             <MetricDisplay
               label="Pain Level"
@@ -96,12 +72,30 @@ export default async function DashboardPage() {
               color="primary"
             />
           </PremiumCard>
+
+          <PremiumCard variant="metric">
+            <MetricDisplay
+              label="Recovery"
+              value={recoveryScore.overall}
+              unit="%"
+              color="primary"
+            />
+          </PremiumCard>
+
+          <PremiumCard variant="metric">
+            <MetricDisplay
+              label="Active Goals"
+              value={activeGoals?.length || 0}
+              unit=""
+              color="success"
+            />
+          </PremiumCard>
         </div>
 
         {/* Proactive AI Insights */}
         <ProactiveInsights />
 
-        {/* Active Goals */}
+        {/* Active Goals - Collapsed */}
         {activeGoals && activeGoals.length > 0 && (
           <PremiumCard>
             <h3 className="text-lg font-semibold mb-4">Active Goals</h3>
@@ -118,31 +112,6 @@ export default async function DashboardPage() {
                 </div>
               ))}
             </div>
-          </PremiumCard>
-        )}
-        
-        {/* Recent Insights */}
-        {recentInsights && recentInsights.length > 0 && (
-          <PremiumCard variant="gradient">
-            <h3 className="text-lg font-semibold mb-4">💡 Recent Insights</h3>
-            <div className="space-y-3">
-              {recentInsights.map(insight => (
-                <div key={insight.id} className="p-3 rounded-lg bg-white/50 dark:bg-neutral-900/50">
-                  <p className="font-medium">{insight.title}</p>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">{insight.description}</p>
-                </div>
-              ))}
-            </div>
-          </PremiumCard>
-        )}
-        
-        {/* Getting Started Message */}
-        {!todayLog && (
-          <PremiumCard variant="gradient">
-            <h3 className="text-lg font-semibold mb-2">Welcome to Your Accountability Journey!</h3>
-            <p className="text-neutral-600 dark:text-neutral-400">
-              Start by logging your morning pain level and energy to get personalized insights and exercise routines.
-            </p>
           </PremiumCard>
         )}
       </div>

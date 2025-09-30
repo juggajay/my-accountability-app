@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(git log:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd proactive AI system with discovery questions and context analysis\n\n- AI now learns about user through natural discovery questions\n- Daily context analysis of pain, exercise, spending, and alcohol patterns\n- Proactive insights widget shows AI-generated observations and suggestions\n- Memory system remembers key facts about user preferences and triggers\n- Enhanced coach automatically loads context and memories in conversations\n- 6 new database tables: user_discovery_profile, daily_context_snapshots, ai_memory, discovery_questions, discovery_sessions, proactive_insights\n- 12 seeded discovery questions for onboarding\n- Complete documentation and quick start guides\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(curl -X POST https://my-accountability-app.vercel.app/api/ai/proactive -H \"Content-Type: application/json\" -d \"{\"\"action\"\":\"\"generate_context\"\"}\")",
+      "Bash(curl --ssl-no-revoke -X POST https://my-accountability-app.vercel.app/api/ai/proactive -H \"Content-Type: application/json\" -d \"{\"\"action\"\":\"\"generate_context\"\"}\")",
+      "Bash(curl --ssl-no-revoke -X POST https://my-accountability-app.vercel.app/api/ai/proactive -H \"Content-Type: application/json\" -d \"{\"\"action\"\":\"\"generate_insights\"\"}\")"
     ],
     "deny": [],
     "ask": []
