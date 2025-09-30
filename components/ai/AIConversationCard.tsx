@@ -27,6 +27,18 @@ export function AIConversationCard() {
 
   const loadInitialGreeting = async () => {
     try {
+      // First, try to load existing conversation history from today
+      const historyResponse = await fetch('/api/ai/conversation-history')
+      const historyData = await historyResponse.json()
+
+      if (historyData.success && historyData.data.messages.length > 0) {
+        // Load existing conversation from today
+        setMessages(historyData.data.messages)
+        setInitializing(false)
+        return
+      }
+
+      // No existing conversation, generate new greeting
       // Check if AI should ask discovery questions
       const checkResponse = await fetch('/api/ai/proactive', {
         method: 'POST',
