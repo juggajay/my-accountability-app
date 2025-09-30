@@ -11,6 +11,42 @@
 -- All existing tables remain unchanged
 
 -- ============================================================================
+-- PHOTO ARCHIVE TABLE (Create first - referenced by food_logs)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS photo_archive (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  photo_type TEXT NOT NULL CHECK (photo_type IN ('meal', 'receipt', 'exercise', 'posture', 'other')),
+  photo_base64 TEXT,
+  photo_url TEXT,
+  analysis_result JSONB,
+  tags TEXT[],
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Index for fast queries
+CREATE INDEX IF NOT EXISTS idx_photo_archive_user_type ON photo_archive(user_id, photo_type, created_at DESC);
+
+-- Row Level Security
+ALTER TABLE photo_archive ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own photos"
+  ON photo_archive FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own photos"
+  ON photo_archive FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own photos"
+  ON photo_archive FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own photos"
+  ON photo_archive FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- ============================================================================
 -- FOOD LOGS TABLE
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS food_logs (
@@ -51,42 +87,6 @@ CREATE POLICY "Users can update own food logs"
 
 CREATE POLICY "Users can delete own food logs"
   ON food_logs FOR DELETE
-  USING (auth.uid() = user_id);
-
--- ============================================================================
--- PHOTO ARCHIVE TABLE
--- ============================================================================
-CREATE TABLE IF NOT EXISTS photo_archive (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  photo_type TEXT NOT NULL CHECK (photo_type IN ('meal', 'receipt', 'exercise', 'posture', 'other')),
-  photo_base64 TEXT,
-  photo_url TEXT,
-  analysis_result JSONB,
-  tags TEXT[],
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
--- Index for fast queries
-CREATE INDEX IF NOT EXISTS idx_photo_archive_user_type ON photo_archive(user_id, photo_type, created_at DESC);
-
--- Row Level Security
-ALTER TABLE photo_archive ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can view own photos"
-  ON photo_archive FOR SELECT
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert own photos"
-  ON photo_archive FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update own photos"
-  ON photo_archive FOR UPDATE
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete own photos"
-  ON photo_archive FOR DELETE
   USING (auth.uid() = user_id);
 
 -- ============================================================================
@@ -291,8 +291,8 @@ DO $$
 BEGIN
   RAISE NOTICE '✓ Database migration completed successfully!';
   RAISE NOTICE 'Created tables:';
-  RAISE NOTICE '  - food_logs (meal tracking with nutrition data)';
   RAISE NOTICE '  - photo_archive (universal photo storage)';
+  RAISE NOTICE '  - food_logs (meal tracking with nutrition data)';
   RAISE NOTICE '  - activity_logs (general activity tracking)';
   RAISE NOTICE '  - nutrition_goals (user dietary targets)';
   RAISE NOTICE '  - daily_nutrition_summary (automated daily aggregation)';
