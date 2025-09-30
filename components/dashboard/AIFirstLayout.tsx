@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { AIConversationCard } from '@/components/ai/AIConversationCard'
 import { NutritionDashboard } from '@/components/nutrition/NutritionDashboard'
-import { PremiumCard } from '@/components/ui/PremiumCard'
+import { PremiumCard } from '@/components/ui/premium-card'
 import {
   Brain,
   Apple,

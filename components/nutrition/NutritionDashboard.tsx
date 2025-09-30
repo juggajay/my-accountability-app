@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { PremiumCard } from '@/components/ui/PremiumCard'
+import { PremiumCard } from '@/components/ui/premium-card'
 import { Apple, Flame, TrendingUp, Clock, Camera } from 'lucide-react'
 
 interface NutritionSummary {
