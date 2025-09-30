@@ -27,28 +27,8 @@ export function AIConversationCard() {
 
   const loadInitialGreeting = async () => {
     try {
-      // First, try to load existing conversation history from today
-      const historyResponse = await fetch('/api/ai/conversation-history')
-      const historyData = await historyResponse.json()
-
-      if (historyData.success && historyData.data.messages.length > 0) {
-        // Load existing conversation from today
-        setMessages(historyData.data.messages)
-        setInitializing(false)
-        return
-      }
-
-      // No existing conversation, generate new greeting
-      // Check if AI should ask discovery questions
-      const checkResponse = await fetch('/api/ai/proactive', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'check_discovery' }),
-      })
-
-      const checkData = await checkResponse.json()
-
-      // Get conversation starter
+      // Always start fresh conversation - AI remembers via memory system
+      // Get conversation starter (may include discovery questions based on context)
       const starterResponse = await fetch('/api/ai/proactive', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -69,7 +49,7 @@ export function AIConversationCard() {
         setMessages([
           {
             role: 'assistant',
-            content: "Hey! I'm your AI accountability coach. How are you doing today?",
+            content: "Hey! How are you doing today?",
           },
         ])
       }
@@ -78,7 +58,7 @@ export function AIConversationCard() {
       setMessages([
         {
           role: 'assistant',
-          content: "Hey! I'm your AI accountability coach. How are you doing today?",
+          content: "Hey! How are you doing today?",
         },
       ])
     } finally {
@@ -167,9 +147,9 @@ export function AIConversationCard() {
         </div>
       </div>
 
-      {/* Messages */}
+      {/* Messages - Show only last 6 messages to keep it concise */}
       <div className="space-y-4 mb-6 max-h-[400px] overflow-y-auto">
-        {messages.map((message, index) => (
+        {messages.slice(-6).map((message, index) => (
           <div
             key={index}
             className={`flex ${
