@@ -1,6 +1,7 @@
 import { PremiumCard } from '@/components/ui/premium-card'
 import { MetricDisplay } from '@/components/ui/metric-display'
 import { ProgressRing } from '@/components/ui/progress-ring'
+import { ProactiveInsights } from '@/components/ai/ProactiveInsights'
 import { getDailyLog, getWeekLogs, getRecentExerciseSessions, getActiveGoals, getRecentInsights } from '@/lib/supabase/queries'
 import { calculateRecoveryScore, calculateStreak, calculateTrend, getTimeOfDay, getDayCount } from '@/lib/utils'
 import { format } from 'date-fns'
@@ -77,7 +78,7 @@ export default async function DashboardPage() {
         {/* Quick Metrics */}
         <div className="grid grid-cols-2 gap-4">
           <PremiumCard variant="metric">
-            <MetricDisplay 
+            <MetricDisplay
               label="Pain Level"
               value={todayLog?.morning_pain || '-'}
               unit="/10"
@@ -85,9 +86,9 @@ export default async function DashboardPage() {
               color={todayLog?.morning_pain && todayLog.morning_pain < 5 ? 'success' : 'warning'}
             />
           </PremiumCard>
-          
+
           <PremiumCard variant="metric">
-            <MetricDisplay 
+            <MetricDisplay
               label="Exercise Streak"
               value={exerciseStreak}
               unit="days"
@@ -96,7 +97,10 @@ export default async function DashboardPage() {
             />
           </PremiumCard>
         </div>
-        
+
+        {/* Proactive AI Insights */}
+        <ProactiveInsights />
+
         {/* Active Goals */}
         {activeGoals && activeGoals.length > 0 && (
           <PremiumCard>
