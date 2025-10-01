@@ -106,79 +106,99 @@ async function handlePhotoInput(
   }
 
   if (photoType === 'meal') {
-    // Analyze food photo
-    const analysis = await analyzeFoodPhoto(imageBase64, additionalContext)
+    try {
+      // Analyze food photo
+      console.log('Starting food photo analysis...')
+      const analysis = await analyzeFoodPhoto(imageBase64, additionalContext)
+      console.log('Analysis complete:', JSON.stringify(analysis, null, 2))
 
-    // Get authenticated user
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
-    }
+      // Get authenticated user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+      }
 
-    // Store photo in archive (store as data URL for now)
-    const { data: photoRecord } = await supabase
-      .from('photo_archive')
-      .insert({
-        photo_type: 'meal',
-        photo_url: `data:image/jpeg;base64,${imageBase64}`,
-        analysis_results: analysis,
-        confidence_score: analysis.confidence,
-        tags: analysis.foods?.map(f => f.name) || [],
-        uploaded_at: new Date().toISOString(),
-      })
-      .select()
-      .single()
-
-    // Save food log to database
-    const logEntry = {
-      meal_type: analysis.mealType || inferMealType(),
-      description: analysis.mealDescription,
-      calories: analysis.estimatedCalories,
-      protein_g: analysis.estimatedMacros.protein_g,
-      carbs_g: analysis.estimatedMacros.carbs_g,
-      fat_g: analysis.estimatedMacros.fat_g,
-      fiber_g: analysis.estimatedMacros.fiber_g,
-      health_score: analysis.healthScore,
-      confidence: analysis.confidence,
-      estimation_source: 'ai',
-      logged_at: new Date().toISOString(),
-    }
-
-    const { data: savedLog, error } = await supabase
-      .from('food_logs')
-      .insert(logEntry)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error saving food log:', error)
-      throw error
-    }
-
-    // Link the photo to the saved food log
-    if (photoRecord?.id && savedLog?.id) {
-      await supabase
+      // Store photo in archive (store as data URL for now)
+      console.log('Saving photo to archive...')
+      const { data: photoRecord, error: photoError } = await supabase
         .from('photo_archive')
-        .update({
-          related_log_type: 'food_logs',
-          related_log_id: savedLog.id,
+        .insert({
+          photo_type: 'meal',
+          photo_url: `data:image/jpeg;base64,${imageBase64.substring(0, 100)}...`, // Truncate for storage
+          analysis_results: analysis,
+          confidence_score: analysis.confidence,
+          tags: analysis.foods?.map(f => f.name) || [],
+          uploaded_at: new Date().toISOString(),
         })
-        .eq('id', photoRecord.id)
+        .select()
+        .single()
+
+      if (photoError) {
+        console.error('Error saving photo:', photoError)
+        throw new Error(`Photo save failed: ${photoError.message}`)
+      }
+      console.log('Photo saved successfully')
+
+      // Save food log to database
+      console.log('Saving food log...')
+      const logEntry = {
+        meal_type: analysis.mealType || inferMealType(),
+        description: analysis.mealDescription,
+        calories: analysis.estimatedCalories,
+        protein_g: analysis.estimatedMacros.protein_g,
+        carbs_g: analysis.estimatedMacros.carbs_g,
+        fat_g: analysis.estimatedMacros.fat_g,
+        fiber_g: analysis.estimatedMacros.fiber_g,
+        health_score: analysis.healthScore,
+        confidence: analysis.confidence,
+        estimation_source: 'ai',
+        logged_at: new Date().toISOString(),
+      }
+
+      const { data: savedLog, error } = await supabase
+        .from('food_logs')
+        .insert(logEntry)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error saving food log:', error)
+        throw new Error(`Food log save failed: ${error.message}`)
+      }
+      console.log('Food log saved successfully')
+
+      // Link the photo to the saved food log
+      if (photoRecord?.id && savedLog?.id) {
+        console.log('Linking photo to food log...')
+        await supabase
+          .from('photo_archive')
+          .update({
+            related_log_type: 'food_logs',
+            related_log_id: savedLog.id,
+          })
+          .eq('id', photoRecord.id)
+      }
+
+      // Generate confirmation message
+      const confirmationMessage = generateFoodConfirmation(analysis)
+
+      // Return success with saved log
+      return NextResponse.json({
+        success: true,
+        action: 'food_logged',
+        message: confirmationMessage,
+        data: {
+          analysis,
+          logEntry: savedLog,
+        },
+      })
+    } catch (error: any) {
+      console.error('Error in meal photo processing:', error)
+      return NextResponse.json({
+        success: false,
+        error: `Failed to process meal photo: ${error.message}`,
+      }, { status: 500 })
     }
-
-    // Generate confirmation message
-    const confirmationMessage = generateFoodConfirmation(analysis)
-
-    // Return success with saved log
-    return NextResponse.json({
-      success: true,
-      action: 'food_logged',
-      message: confirmationMessage,
-      data: {
-        analysis,
-        logEntry: savedLog,
-      },
-    })
   }
 
   // Other photo types (receipt, body, etc.) can be added here
