@@ -67,12 +67,6 @@ async function handlePhotoInput(
       })
     }
 
-    // Log spending from receipt
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
-    }
-
     // Store receipt in photo archive
     const { data: photoRecord } = await supabase
       .from('photo_archive')
@@ -111,12 +105,6 @@ async function handlePhotoInput(
       console.log('Starting food photo analysis...')
       const analysis = await analyzeFoodPhoto(imageBase64, additionalContext)
       console.log('Analysis complete:', JSON.stringify(analysis, null, 2))
-
-      // Get authenticated user
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
-      }
 
       // Store photo in archive (store as data URL for now)
       console.log('Saving photo to archive...')
