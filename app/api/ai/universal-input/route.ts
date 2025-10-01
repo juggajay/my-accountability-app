@@ -77,24 +77,22 @@ async function handlePhotoInput(
     const { data: photoRecord } = await supabase
       .from('photo_archive')
       .insert({
-        user_id: user.id,
         photo_type: 'receipt',
-        photo_base64: imageBase64,
-        analysis_result: analysis,
-        created_at: new Date().toISOString(),
+        photo_url: `data:image/jpeg;base64,${imageBase64}`,
+        analysis_results: analysis,
+        searchable_text: analysis.merchantName || '',
+        uploaded_at: new Date().toISOString(),
       })
       .select()
       .single()
 
     // Log spending entry
-    const { error } = await supabase.from('spending').insert({
-      user_id: user.id,
+    const { error } = await supabase.from('spending_logs').insert({
       amount: analysis.totalAmount,
       category: analysis.detectedCategories[0] || 'other',
       description: `${analysis.merchantName || 'Purchase'} (from receipt)`,
       merchant: analysis.merchantName,
-      date: analysis.date || new Date().toISOString().split('T')[0],
-      created_at: new Date().toISOString(),
+      logged_at: new Date().toISOString(),
     })
 
     if (error) throw error
@@ -117,22 +115,22 @@ async function handlePhotoInput(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Store photo in archive
+    // Store photo in archive (store as data URL for now)
     const { data: photoRecord } = await supabase
       .from('photo_archive')
       .insert({
-        user_id: user.id,
         photo_type: 'meal',
-        photo_base64: imageBase64,
-        analysis_result: analysis,
-        created_at: new Date().toISOString(),
+        photo_url: `data:image/jpeg;base64,${imageBase64}`,
+        analysis_results: analysis,
+        confidence_score: analysis.confidence,
+        tags: analysis.foods?.map(f => f.name) || [],
+        uploaded_at: new Date().toISOString(),
       })
       .select()
       .single()
 
     // Save food log to database
     const logEntry = {
-      user_id: user.id,
       meal_type: analysis.mealType || inferMealType(),
       description: analysis.mealDescription,
       calories: analysis.estimatedCalories,
@@ -143,9 +141,7 @@ async function handlePhotoInput(
       health_score: analysis.healthScore,
       confidence: analysis.confidence,
       estimation_source: 'ai',
-      photo_id: photoRecord?.id,
-      meal_date: new Date().toISOString().split('T')[0],
-      created_at: new Date().toISOString(),
+      logged_at: new Date().toISOString(),
     }
 
     const { data: savedLog, error } = await supabase
@@ -157,6 +153,17 @@ async function handlePhotoInput(
     if (error) {
       console.error('Error saving food log:', error)
       throw error
+    }
+
+    // Link the photo to the saved food log
+    if (photoRecord?.id && savedLog?.id) {
+      await supabase
+        .from('photo_archive')
+        .update({
+          related_log_type: 'food_logs',
+          related_log_id: savedLog.id,
+        })
+        .eq('id', photoRecord.id)
     }
 
     // Generate confirmation message
