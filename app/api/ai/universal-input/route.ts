@@ -106,26 +106,8 @@ async function handlePhotoInput(
       const analysis = await analyzeFoodPhoto(imageBase64, additionalContext)
       console.log('Analysis complete:', JSON.stringify(analysis, null, 2))
 
-      // Store photo in archive (store as data URL for now)
-      console.log('Saving photo to archive...')
-      const { data: photoRecord, error: photoError } = await supabase
-        .from('photo_archive')
-        .insert({
-          photo_type: 'meal',
-          photo_url: `data:image/jpeg;base64,${imageBase64.substring(0, 100)}...`, // Truncate for storage
-          analysis_results: analysis,
-          confidence_score: analysis.confidence,
-          tags: analysis.foods?.map(f => f.name) || [],
-          uploaded_at: new Date().toISOString(),
-        })
-        .select()
-        .single()
-
-      if (photoError) {
-        console.error('Error saving photo:', photoError)
-        throw new Error(`Photo save failed: ${photoError.message}`)
-      }
-      console.log('Photo saved successfully')
+      // Skip photo archiving for now - focus on food log
+      console.log('Skipping photo archive (not critical for meal logging)')
 
       // Save food log to database
       console.log('Saving food log...')
@@ -155,17 +137,7 @@ async function handlePhotoInput(
       }
       console.log('Food log saved successfully')
 
-      // Link the photo to the saved food log
-      if (photoRecord?.id && savedLog?.id) {
-        console.log('Linking photo to food log...')
-        await supabase
-          .from('photo_archive')
-          .update({
-            related_log_type: 'food_logs',
-            related_log_id: savedLog.id,
-          })
-          .eq('id', photoRecord.id)
-      }
+      // Photo archiving skipped for now
 
       // Generate confirmation message
       const confirmationMessage = generateFoodConfirmation(analysis)
