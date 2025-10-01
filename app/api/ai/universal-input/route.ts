@@ -111,29 +111,65 @@ async function handlePhotoInput(
     // Analyze food photo
     const analysis = await analyzeFoodPhoto(imageBase64, additionalContext)
 
+    // Get authenticated user
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Store photo in archive
+    const { data: photoRecord } = await supabase
+      .from('photo_archive')
+      .insert({
+        user_id: user.id,
+        photo_type: 'meal',
+        photo_base64: imageBase64,
+        analysis_result: analysis,
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single()
+
+    // Save food log to database
+    const logEntry = {
+      user_id: user.id,
+      meal_type: analysis.mealType || inferMealType(),
+      description: analysis.mealDescription,
+      calories: analysis.estimatedCalories,
+      protein_g: analysis.estimatedMacros.protein_g,
+      carbs_g: analysis.estimatedMacros.carbs_g,
+      fat_g: analysis.estimatedMacros.fat_g,
+      fiber_g: analysis.estimatedMacros.fiber_g,
+      health_score: analysis.healthScore,
+      confidence: analysis.confidence,
+      estimation_source: 'ai',
+      photo_id: photoRecord?.id,
+      meal_date: new Date().toISOString().split('T')[0],
+      created_at: new Date().toISOString(),
+    }
+
+    const { data: savedLog, error } = await supabase
+      .from('food_logs')
+      .insert(logEntry)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error saving food log:', error)
+      throw error
+    }
+
     // Generate confirmation message
     const confirmationMessage = generateFoodConfirmation(analysis)
 
-    // Return analysis for user confirmation
+    // Return success with saved log
     return NextResponse.json({
       success: true,
-      action: 'confirm_food_log',
+      action: 'food_logged',
       message: confirmationMessage,
       data: {
         analysis,
-        // Pre-filled log entry
-        logEntry: {
-          meal_type: analysis.mealType || inferMealType(),
-          description: analysis.mealDescription,
-          calories: analysis.estimatedCalories,
-          protein_g: analysis.estimatedMacros.protein_g,
-          carbs_g: analysis.estimatedMacros.carbs_g,
-          fat_g: analysis.estimatedMacros.fat_g,
-          fiber_g: analysis.estimatedMacros.fiber_g,
-          health_score: analysis.healthScore,
-          confidence: analysis.confidence,
-          estimation_source: 'ai',
-        },
+        logEntry: savedLog,
       },
     })
   }
