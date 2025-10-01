@@ -167,11 +167,12 @@ export function AIConversationCard() {
       }
     } catch (error: any) {
       console.error('Error sending message:', error)
+      const errorMessage = error.message || 'Unknown error'
       setMessages([
         ...newMessages,
         {
           role: 'assistant',
-          content: "Sorry, I'm having trouble responding right now. Please try again.",
+          content: `Error: ${errorMessage}\n\nPlease try again or contact support if this persists.`,
         },
       ])
     } finally {
